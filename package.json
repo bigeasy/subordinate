@@ -1,0 +1,34 @@
+{
+    "name":             "subordinate",
+    "version":          "9.9.9",
+    "author":           "Alan Gutierrez <alan@prettyrobots.com>",
+    "description":      "Determine if one object contains another object.",
+    "keywords":
+    [
+                        "object", "subset", "conatinership", "union", "difference"
+    ],
+    "contributors":     [],
+    "homepage":         "https://github.com/bigeasy/subordinate",
+    "bugs":             "https://github.com/bigeasy/subordinate/issues",
+    "licenses":
+    [{
+                        "type": "MIT",
+                        "url": "http://github.com/bigeasy/subordinate/raw/master/LICENSE"
+    }],
+    "repository":
+    {
+                        "type": "git",
+                        "url": "http://github.com/bigeasy/subordinate.git"
+    },
+    "dependencies":
+    {
+    },
+    "devDependencies":
+    {
+                        "proof":              "0.0.42"
+    },
+    "scripts":
+    {
+                        "test": "proof platform win32 && proof test */*/*.t.js || t/test"
+    }
+}
