@@ -4,6 +4,7 @@ var subordinate = module.exports = function (object, subobject) {
         var actual = object[key]
         if (expect !== actual) {
             if (actual == null) return false
+            return false
         }
     }
     return true
