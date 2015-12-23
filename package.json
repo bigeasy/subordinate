@@ -2,7 +2,7 @@
     "name":             "subordinate",
     "version":          "0.0.1",
     "author":           "Alan Gutierrez <alan@prettyrobots.com>",
-    "description":      "Determine if one object contains another object.",
+    "description":      "Child process communication.",
     "keywords":
     [
                         "object", "subset", "conatinership", "union", "difference"
@@ -10,11 +10,7 @@
     "contributors":     [],
     "homepage":         "https://github.com/bigeasy/subordinate",
     "bugs":             "https://github.com/bigeasy/subordinate/issues",
-    "licenses":
-    [{
-                        "type": "MIT",
-                        "url": "http://github.com/bigeasy/subordinate/raw/master/LICENSE"
-    }],
+    "license":          "MIT",
     "repository":
     {
                         "type": "git",
@@ -22,10 +18,15 @@
     },
     "dependencies":
     {
+                        "cadence":          "0.4.3",
+                        "cliffhanger":      "0.0.1",
+                        "operation":        "0.0.4",
+                        "monotonic":        "0.0.3",
+                        "reactor":          "0.0.10"
     },
     "devDependencies":
     {
-                        "proof":              "0.0.47"
+                        "proof":            "0.0.57"
     },
     "scripts":
     {
