@@ -9,7 +9,7 @@ function prove (async, assert) {
     var child = processes.spawn('node', [
         path.join(__dirname, 'worker.bin.js')
     ], {
-        stdio: [ 'ignore', 'inherit', 'pipe', 'pipe', 'ipc' ]
+        stdio: [ 'ignore', null, 'pipe', 'pipe', 'ipc' ]
     })
     var boss = new Boss([ child ])
     var monitor = function (child, index, callback) {
