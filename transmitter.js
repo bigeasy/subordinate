@@ -17,7 +17,7 @@ Transmitter.prototype.request = cadence(function (async, method, body) {
         method: method,
         cookie: this._cliffhanger.invoke(async()),
         body: body
-    }].concat(handle))
+    }].concat(handle, async()))
 })
 
 Transmitter.prototype._message = function (message) {
