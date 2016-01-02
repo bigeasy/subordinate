@@ -1,16 +1,21 @@
 var cadence = require('cadence')
+var Delta = require('delta')
+var abend = require('abend')
+var byline = require('byline')
 var Reactor = require('reactor')
 var Operation = require('operation')
+var Staccato = require('staccato')
+var slice = [].slice
 
-function Listener (object, delegations, process) {
+function Listener (object, delegations, conduit) {
     this._delegations = {}
     for (var method in delegations) {
-        this._delegations[method] = new Operation({ object: object, method: delegations[method] })
+        this._delegations[method] = new Operation({
+            object: object, method: delegations[method]
+        })
     }
-    this._listener = this._message.bind(this)
-    this._process = process
-    this._process.on('message', this._listener)
-    this._invoking = new Reactor({ object: this, method: '_request' })
+    var reactor = new Reactor({ object: this, method: '_request' })
+    this._connection = conduit.createConnection(reactor)
 }
 
 // TODO Note that, unlike an HTTP server, we don't want to treat errors as
@@ -23,29 +28,25 @@ function Listener (object, delegations, process) {
 
 //
 Listener.prototype._request = cadence(function (async, timeout, message) {
-    if (message.namespace == 'bigeasy.subordinate') {
+    if (message.namespace == 'bigeasy.subordinate' && message.type == 'request') {
         var delegate = this._delegations[message.method]
         if (delegate) {
             async(function () {
                 delegate.apply([ message.body, async() ])
             }, function (body) {
-                this._process.send({
+                this._connection.request([{
                     namespace: 'bigeasy.subordinate',
                     type: 'response',
                     cookie: message.cookie,
                     body: body
-                })
+                }])
             })
         }
     }
 })
 
-Listener.prototype._message = function (message) {
-    this._invoking.push(message)
-}
-
 Listener.prototype.unlisten = function () {
-    this._process.removeListener('message', this._listener)
+    this._connection.end()
 }
 
 function Dispatcher (object) {
@@ -58,8 +59,8 @@ Dispatcher.prototype.dispatch = function (method, delegate) {
     this._delegations[method] = delegate
 }
 
-Dispatcher.prototype.listen = function (process) {
-    return new Listener(this._object, this._delegations, process)
+Dispatcher.prototype.listen = function (conduit) {
+    return new Listener(this._object, this._delegations, conduit)
 }
 
 module.exports = Dispatcher

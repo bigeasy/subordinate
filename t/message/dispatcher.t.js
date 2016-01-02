@@ -1,8 +1,9 @@
-require('proof')(3, require('cadence')(prove))
+require('proof')(2, require('cadence')(prove))
 
 function prove (async, assert) {
     var events = require('events')
     var Dispatcher = require('../../dispatcher')
+    var Conduit = require('../../message/conduit')
     var process = new events.EventEmitter
     var done = async()
 
@@ -27,22 +28,15 @@ function prove (async, assert) {
     dispatcher.dispatch('post')
     dispatcher.dispatch('get', 'get')
 
-    var listener = dispatcher.listen(process)
-
     process.send = function (message) {
-        assert(message, {
-            namespace: 'bigeasy.subordinate',
-            type: 'response',
-            cookie: 'x',
-            body: { hello: 'nurse' }
-        }, 'message')
+        listener.unlisten()
         listener.unlisten()
         done()
     }
-    process.emit('message', { namespace: 'ignore' })
-    process.emit('message', { namespace: 'bigeasy.subordinate', method: 'foo'  })
+    var listener = dispatcher.listen(new Conduit(process))
     process.emit('message', {
         namespace: 'bigeasy.subordinate',
+        type: 'request',
         method: 'post',
         cookie: 'x',
         body: { hello: 'world' }

@@ -18,16 +18,21 @@
     },
     "dependencies":
     {
+                        "abend":            "0.0.3",
+                        "byline":           "4.2.1",
                         "cadence":          "0.4.3",
                         "cliffhanger":      "0.0.1",
+                        "delta":            "0.0.4",
                         "operation":        "0.0.4",
                         "monotonic":        "0.0.3",
                         "reactor":          "0.0.14",
+                        "restrictor":       "0.0.3",
+                        "turnstile":        "0.0.22",
+                        "staccato":         "0.0.9",
                         "vestibule":        "0.0.1"
     },
     "devDependencies":
     {
-                        "abend":            "0.0.3",
                         "proof":            "0.0.57",
                         "hash.fnv":         "0.0.0"
     },

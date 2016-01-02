@@ -2,10 +2,11 @@ require('proof')(2, require('cadence')(prove))
 
 function prove (async, assert) {
     var Transmitter = require('../../transmitter')
+    var Conduit = require('../../message/conduit')
     var hashed = require('../../hashed')
     var events = require('events')
     var program = new events.EventEmitter
-    program.send = function (message, callback) {
+    program.send = function (message) {
         assert(message, {
             namespace: 'bigeasy.subordinate',
             type: 'request',
@@ -19,9 +20,8 @@ function prove (async, assert) {
             cookie: '1',
             body: { hello: 'world' }
         })
-        callback()
     }
-    var transmitters = [new Transmitter(program)]
+    var transmitters = [new Transmitter(new Conduit(program))]
     var fnv = require('hash.fnv')
     async(function () {
         hashed(fnv, transmitters, 'get', 'x', { key: 'value' }, async())
