@@ -21,7 +21,7 @@ Transmitter.prototype.request = restrict(cadence(function (async, timeout, metho
         method: method,
         cookie: this._cliffhanger.invoke(async()),
         body: body
-    }].concat(slice.call(arguments, 3)))
+    }].concat(slice.call(arguments, 4)))
 }))
 
 Transmitter.prototype._message = cadence(function (async, timeout, message) {
