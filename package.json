@@ -24,7 +24,7 @@
                         "cliffhanger":      "1.0.x",
                         "delta":            "1.0.x",
                         "operation":        "1.0.x",
-                        "monotonic":        "0.0.3",
+                        "monotonic":        "1.0.x",
                         "reactor":          "0.0.14",
                         "restrictor":       "0.0.3",
                         "turnstile":        "0.0.22",
