@@ -27,7 +27,7 @@
                         "monotonic":        "1.0.x",
                         "reactor":          "1.0.x",
                         "restrictor":       "1.0.x",
-                        "turnstile":        "0.0.22",
+                        "turnstile":        "1.0.x",
                         "staccato":         "0.0.9",
                         "vestibule":        "0.0.1"
     },
