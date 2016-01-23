@@ -21,7 +21,7 @@
                         "abend":            "1.0.x",
                         "byline":           "4.2.1",
                         "cadence":          "1.0.x",
-                        "cliffhanger":      "0.0.1",
+                        "cliffhanger":      "1.0.x",
                         "delta":            "0.0.4",
                         "operation":        "0.0.4",
                         "monotonic":        "0.0.3",
