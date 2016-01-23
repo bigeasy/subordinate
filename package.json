@@ -28,7 +28,7 @@
                         "reactor":          "1.0.x",
                         "restrictor":       "1.0.x",
                         "turnstile":        "1.0.x",
-                        "staccato":         "0.0.9",
+                        "staccato":         "1.0.x",
                         "vestibule":        "0.0.1"
     },
     "devDependencies":
