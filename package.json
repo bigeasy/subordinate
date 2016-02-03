@@ -22,7 +22,7 @@
                         "byline":           "4.2.1",
                         "cadence":          "1.x",
                         "cliffhanger":      "1.x",
-                        "delta":            "1.0.x",
+                        "delta":            "1.x",
                         "operation":        "1.0.x",
                         "monotonic":        "1.0.x",
                         "reactor":          "1.0.x",
