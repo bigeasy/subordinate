@@ -29,7 +29,7 @@
                         "restrictor":       "1.x",
                         "turnstile":        "1.x",
                         "staccato":         "1.x",
-                        "vestibule":        "0.0.1"
+                        "vestibule":        "1.x"
     },
     "devDependencies":
     {
