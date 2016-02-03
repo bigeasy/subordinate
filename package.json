@@ -25,7 +25,7 @@
                         "delta":            "1.x",
                         "operation":        "1.x",
                         "monotonic":        "1.x",
-                        "reactor":          "1.0.x",
+                        "reactor":          "1.x",
                         "restrictor":       "1.0.x",
                         "turnstile":        "1.0.x",
                         "staccato":         "1.0.x",
