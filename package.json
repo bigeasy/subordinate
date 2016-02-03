@@ -23,7 +23,7 @@
                         "cadence":          "1.x",
                         "cliffhanger":      "1.x",
                         "delta":            "1.x",
-                        "operation":        "1.0.x",
+                        "operation":        "1.x",
                         "monotonic":        "1.0.x",
                         "reactor":          "1.0.x",
                         "restrictor":       "1.0.x",
