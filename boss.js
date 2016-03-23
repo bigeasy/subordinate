@@ -13,10 +13,12 @@ var Vestibule = require('vestibule')
 // be able to solve leak problems by restarting these workers, you're going to
 // have to restart the process group, or better still, don't leak. I'm not
 // concerned about leaks because my processes tend to be small so that leaks are
-// not hard to find. If it really was a problem, I'd make the process group
-// short lived and at a devops level migrate from one instance of the service to
-// another. Thus, I'm not going to clutter this with a bunch of restart logic
-// that I'm never going to use.
+// not hard to find.
+//
+// If it really was a problem, I'd make the process group short lived and at a
+// devops level migrate from one instance of the service to another. Thus, I'm
+// not going to clutter this with a bunch of restart logic that I'm never going
+// to use.
 
 //
 function Boss (children) {
