@@ -21,21 +21,9 @@
     },
     "dependencies":
     {
-                            "abend":                        "1.0.x",
-                            "byline":                       "5.0.0",
-                            "cadence":                      "1.0.x",
-                            "cliffhanger":                  "1.4.x",
-                            "delta":                        "1.2.x",
-                            "operation":                    "1.2.x",
-                            "reactor":                      "2.4.x",
-                            "restrictor":                   "1.0.x",
-                            "staccato":                     "1.1.x",
-                            "turnstile":                    "1.0.x",
-                            "vestibule":                    "1.4.x"
     },
     "devDependencies":
     {
-                            "hash.fnv":                     "1.0.0",
                             "proof":                        "1.2.x"
     },
     "scripts":
