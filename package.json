@@ -36,7 +36,7 @@
     },
     "devDependencies":
     {
-                            "hash.fnv":                     "0.0.0",
+                            "hash.fnv":                     "1.0.0",
                             "proof":                        "1.2.x"
     },
     "scripts":
