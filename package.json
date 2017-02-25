@@ -21,6 +21,12 @@
     },
     "dependencies":
     {
+                            "destructible":                 "0.1.x",
+                            "hash.fnv":                     "1.0.0",
+                            "downgrader":                   "0.0.1",
+                            "interlocutor":                 "0.1.x",
+                            "nascent.rendezvous":           "0.1.x",
+                            "server-destroy":               "1.0.1"
     },
     "devDependencies":
     {
