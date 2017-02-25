@@ -27,7 +27,7 @@
                             "cliffhanger":                  "1.4.x",
                             "delta":                        "1.2.x",
                             "operation":                    "1.2.x",
-                            "reactor":                      "1.0.x",
+                            "reactor":                      "2.4.x",
                             "restrictor":                   "1.0.x",
                             "staccato":                     "1.1.x",
                             "turnstile":                    "1.0.x",
