@@ -26,7 +26,6 @@
                             "cadence":                      "1.0.x",
                             "cliffhanger":                  "1.4.x",
                             "delta":                        "1.2.x",
-                            "monotonic":                    "1.0.x",
                             "operation":                    "1.2.x",
                             "reactor":                      "1.0.x",
                             "restrictor":                   "1.0.x",
