@@ -113,7 +113,8 @@ Cluster.prototype.run = cadence(function (async) {
     })
 })
 
-Cluster.prototype._proxy = cadence(function (async, request, response) {
+// Hash out the correct worker for a given request.
+Cluster.prototype._distribute = function (request) {
     var key = JSON.stringify(this._keys.map(function (f) {
         var parsed = url.parse(request.url)
         return coalesce(f({
@@ -127,9 +128,13 @@ Cluster.prototype._proxy = cadence(function (async, request, response) {
     var buffer = new Buffer(key)
     var hash = fnv(0, key, 0, key.length)
     var index = hash % this._workers.length
-    var worker = this._workers[index]
+    return { key: key, hash: hash, index: index }
+}
+
+Cluster.prototype._proxy = cadence(function (async, request, response) {
+    var distrubution = this._distribute(request)
     async(function () {
-        if (this._clients[index] == null) {
+        if (this._clients[distrubution.index] == null) {
             async(function () {
                 var connect = {
                     secure: false,
@@ -138,7 +143,7 @@ Cluster.prototype._proxy = cadence(function (async, request, response) {
                     socketPath: this._bind,
                     headers: {
                         'x-subordinate-secret': this._secret,
-                        'x-subordinate-index': index
+                        'x-subordinate-index': distrubution.index
                     }
                 }
                 if (typeof connect.socketPath == 'string') {
@@ -162,15 +167,15 @@ Cluster.prototype._proxy = cadence(function (async, request, response) {
                     client.multiplexer.listen(async())
                 }), abend)
 
-                this._clients[index] = client
+                this._clients[distrubution.index] = client
             })
         }
     }, function () {
-        var client = this._clients[index]
+        var client = this._clients[distrubution.index]
         new Request(client.multiplexer, request, response, function (header) {
-            header.addHTTPHeader('x-subordinate-key', key)
-            header.addHTTPHeader('x-subordinate-hash', hash)
-            header.addHTTPHeader('x-subordinate-index', index)
+            header.addHTTPHeader('x-subordinate-key', distrubution.key)
+            header.addHTTPHeader('x-subordinate-hash', distrubution.hash)
+            header.addHTTPHeader('x-subordinate-index', distrubution.index)
         }).consume(async())
     })
 })
@@ -180,19 +185,27 @@ Cluster.prototype._request = function (request, response) {
 }
 
 Cluster.prototype._socket = function (request, socket) {
-    if (request.headers['x-subordinate-secret'] == this._secret) {
-        var worker = this._workers[+request.headers['x-subordinate-index']]
-        worker.worker.send({
-            middleware: true,
-            request: {
-                httpVersion: request.httpVersion,
-                headers: request.headers,
-                url: request.url,
-                method: request.method,
-                rawHeaders: coalesce(request.rawHeaders, [])
-            }
-        }, socket)
+    var middleware = request.headers['x-subordinate-secret'] == this._secret
+    var message = {
+        middleware: middleware,
+        request: {
+            httpVersion: request.httpVersion,
+            headers: request.headers,
+            url: request.url,
+            method: request.method,
+            rawHeaders: coalesce(request.rawHeaders, [])
+        }
     }
+    if (middleware) {
+        message.index = +request.headers['x-subordinate-index']
+    } else {
+        var distribution = this._distribute(request)
+        for (var key in distribution) {
+            message[key] = distribution[key]
+        }
+    }
+    var worker = this._workers[message.index]
+    worker.worker.send(message, socket)
 }
 
 module.exports = Cluster

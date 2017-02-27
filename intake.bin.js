@@ -12,9 +12,9 @@ require('arguable')(module, require('cadence')(function (async, program) {
             }
         },
         connect: function (request, socket) {
-            if (request.reassigned == null) {
+/*            if (request.reassigned == null) {
                 subordinate.reassign(request, socket, new Buffer(0))
-            }
+            }*/
             socket.write('Hello, World\n')
             socket.end()
         }

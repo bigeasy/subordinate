@@ -16,6 +16,7 @@ function Subordinate (options) {
     this._multiplexer = null
     this._destructor = new Destructor
     this._interlocutor = new Interlocutor(options.middleware)
+    this._userConnect = options.connect
 }
 
 Subordinate.prototype.listen = function (program) {
@@ -31,6 +32,7 @@ Subordinate.prototype._message = function (message, socket) {
             multiplexer.listen(async())
         }), abend)
     } else {
+        this._userConnect.call(null, message, socket)
     }
 }
 
