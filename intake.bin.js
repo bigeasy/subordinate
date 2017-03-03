@@ -12,11 +12,16 @@ require('arguable')(module, require('cadence')(function (async, program) {
             }
         },
         connect: function (request, socket) {
-/*            if (request.reassigned == null) {
-                subordinate.reassign(request, socket, new Buffer(0))
-            }*/
-            socket.write('Hello, World\n')
-            socket.end()
+            console.log(request.headers)
+            if (request.headers['x-intake-reassigned'] == null) {
+                request.headers['x-intake-reassigned'] = '1'
+                var index = +request.headers['x-subordinate-index']
+                subordinate.reassign(1 - index, request, socket)
+            } else {
+                console.log('was reassigned')
+                socket.write('Hello, World\n')
+                socket.end()
+            }
         }
     })
     subordinate.listen(program)

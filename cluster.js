@@ -79,6 +79,7 @@ Cluster.prototype.run = cadence(function (async) {
                 var worker = children.spawn(this._command, this._argv, {
                     stdio: [ 'inherit', 'inherit', 'inherit', 'ipc' ]
                 })
+                worker.on('message', Operation({ object: this, method: '_message' }))
                 this._workers.push({
                     worker: worker,
                     destructor: new Destructor('worker ' + i),
@@ -112,6 +113,14 @@ Cluster.prototype.run = cadence(function (async) {
         }
     })
 })
+
+Cluster.prototype._message = function (message, socket) {
+    if (message.index) {
+        this._workers[message.index].worker.send(message, socket)
+    } else {
+        throw new Error
+    }
+}
 
 // Hash out the correct worker for a given request.
 Cluster.prototype._distribute = function (request) {
@@ -187,8 +196,10 @@ Cluster.prototype._request = function (request, response) {
 Cluster.prototype._socket = function (request, socket) {
     var middleware = request.headers['x-subordinate-secret'] == this._secret
     var message = {
+        module: 'subordinate',
+        method: 'socket',
         middleware: middleware,
-        request: {
+        body: {
             httpVersion: request.httpVersion,
             headers: request.headers,
             url: request.url,
@@ -196,16 +207,39 @@ Cluster.prototype._socket = function (request, socket) {
             rawHeaders: coalesce(request.rawHeaders, [])
         }
     }
+    var message
     if (middleware) {
-        message.index = +request.headers['x-subordinate-index']
+        message = {
+            module: 'subordinate',
+            method: 'socket',
+            middleware: true,
+            index: +request.headers['x-subordinate-index'],
+            buffer: '',
+            body: null
+        }
     } else {
+        // TODO I'm dealing with `rawHeaders` a lot, should create more helpers.
+        // TODO Come back and add `rawHeaders.
+        var request = {
+            httpVersion: request.httpVersion,
+            headers: JSON.parse(JSON.stringify(request.headers)),
+            url: request.url,
+            method: request.method
+        }
         var distribution = this._distribute(request)
-        for (var key in distribution) {
-            message[key] = distribution[key]
+        request.headers['x-subordinate-key'] = distribution.key
+        request.headers['x-subordinate-hash'] = distribution.hash
+        request.headers['x-subordinate-index'] = distribution.index
+        message = {
+            module: 'subordinate',
+            method: 'socket',
+            middleware: false,
+            index: distribution.index,
+            buffer: '',
+            body: request
         }
     }
-    var worker = this._workers[message.index]
-    worker.worker.send(message, socket)
+    this._workers[message.index].worker.send(message, socket)
 }
 
 module.exports = Cluster
