@@ -4,6 +4,8 @@
 
     options:
 
+    -l, --location <path or address:port>
+
     -h, --header <key=value>
 
         The name of a header to provide.
@@ -20,13 +22,24 @@ require('arguable')(module, require('cadence')(function (async, program) {
         var $ = /^([^=]+)=(.*)$/.exec(header)
         headers[$[1]] = $[2]
     })
-    async(function () {
-        Downgrader.Socket.connect({
+    var location = program.ultimate.location, request
+    if (/^[.\/]/.test(location)) {
+        request = {
             secure: false,
-            host: '127.0.0.1',
-            port: 8888,
+            socketPath: location,
             headers: headers
-        }, async())
+        }
+    } else {
+        location = location.split(':')
+        request = {
+            secure: false,
+            host: location[0],
+            port: +location[1],
+            headers: headers
+        }
+    }
+    async(function () {
+        Downgrader.Socket.connect(request, async())
     }, function (request, socket, head) {
         console.log('upgraded', head.length)
         delta(async()).ee(socket).on('data', []).on('end')

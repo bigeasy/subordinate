@@ -4,7 +4,7 @@ server=$!
 sleep 1
 
 echo ----
-node socket.bin.js --header x-subordinate-index=1 --header x-intake-reassigned=1
+node socket.bin.js --location 127.0.0.1:8888 --header x-subordinate-index=1 --header x-intake-reassigned=1
 echo ----
 
 kill $server
