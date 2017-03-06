@@ -1,5 +1,9 @@
 // From the Node.js API.
 var url = require('url')
+var cluster = require('cluster')
+var children = require('child_process')
+var crypto = require('crypto')
+var http = require('http')
 
 // Common utilities.
 var coalesce = require('nascent.coalesce')
@@ -14,11 +18,10 @@ var fnv = require('hash.fnv')
 // Closes all open sockets so that the HTTP server close.
 var destroyer = require('server-destroy')
 
-var cluster = require('cluster')
-var children = require('child_process')
-var crypto = require('crypto')
+// Controlled demolition of objects.
 var Destructor = require('destructible')
-var http = require('http')
+
+// Exceptions that you can catch by type.
 var interrupt = require('interrupt').createInterrupter('subordinate')
 var coalesce = require('nascent.coalesce')
 var Operation = require('operation/redux')
@@ -63,6 +66,22 @@ Cluster.prototype._kill = function () {
     this._workers.forEach(function (worker) { worker.worker.kill() })
 }
 
+Cluster.prototype._startWorker = function (index) {
+    // TODO What else do you need to set?
+    var worker = children.spawn(this._command, this._argv, {
+        stdio: [ 'inherit', 'inherit', 'inherit', 'ipc' ]
+    })
+    worker.on('message', Operation({ object: this, method: '_message' }))
+    this._workers[index] = {
+        worker: worker,
+        destructor: new Destructor('worker ' + index),
+        index: index // useful?
+    }
+    worker.on('exit', function (code, signal) {
+        interrupt.assert(code == 0 || signal == 'SIGTERM', 'workerExit', { code: code, signal: signal })
+    })
+}
+
 Cluster.prototype.run = cadence(function (async) {
     async(function () {
         if (cluster.isMaster) {
@@ -73,21 +92,10 @@ Cluster.prototype.run = cadence(function (async) {
             })
         }
     }, function () {
+        console.log('......', this._workerCount)
         if (cluster.isMaster && this._workerCount > 1) {
             for (var i = 0; i < this._workerCount; i++) {
-                // TODO What else do you need to set?
-                var worker = children.spawn(this._command, this._argv, {
-                    stdio: [ 'inherit', 'inherit', 'inherit', 'ipc' ]
-                })
-                worker.on('message', Operation({ object: this, method: '_message' }))
-                this._workers.push({
-                    worker: worker,
-                    destructor: new Destructor('worker ' + i),
-                    index: i // useful?
-                })
-                worker.on('exit', function (code, signal) {
-                    interrupt.assert(code == 0 || signal == 'SIGTERM', 'workerExit', { code: code, signal: signal })
-                })
+                this._startWorker(i)
             }
         }
         if (cluster.isMaster && this._listenerCount > 1) {
@@ -226,18 +234,23 @@ Cluster.prototype._socket = function (request, socket) {
             url: request.url,
             method: request.method
         }
-        var distribution = this._distribute(request)
-        request.headers['x-subordinate-key'] = distribution.key
-        request.headers['x-subordinate-hash'] = distribution.hash
-        request.headers['x-subordinate-index'] = distribution.index
+        if (this._workerCount != 0) {
+            var distribution = this._distribute(request)
+            request.headers['x-subordinate-key'] = distribution.key
+            request.headers['x-subordinate-hash'] = distribution.hash
+            request.headers['x-subordinate-index'] = distribution.index
+        }
         message = {
             module: 'subordinate',
             method: 'socket',
             middleware: false,
-            index: distribution.index,
+            index: +request.headers['x-subordinate-index'],
             buffer: '',
             body: request
         }
+    }
+    if (this._workerCount == 0 && this._workers[message.index] == null) {
+        this._startWorker(message.index)
     }
     this._workers[message.index].worker.send(message, socket)
 }

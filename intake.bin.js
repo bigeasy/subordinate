@@ -12,8 +12,8 @@ require('arguable')(module, require('cadence')(function (async, program) {
             }
         },
         connect: function (request, socket) {
-            console.log(request.headers)
             if (request.headers['x-intake-reassigned'] == null) {
+                console.log('will reassigned')
                 request.headers['x-intake-reassigned'] = '1'
                 var index = +request.headers['x-subordinate-index']
                 subordinate.reassign(1 - index, request, socket)
