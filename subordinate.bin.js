@@ -43,5 +43,4 @@ require('arguable')(module, require('cadence')(function (async, program) {
     var cluster = new Cluster(program)
     cluster.run(async())
     program.on('shutdown', cluster.destroy.bind(cluster))
-    console.log('woot')
 }))

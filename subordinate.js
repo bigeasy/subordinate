@@ -9,13 +9,15 @@ var Interlocutor = require('interlocutor')
 var coalesce = require('nascent.coalesce')
 
 var Operation = require('operation/redux')
-var Multiplexer = require('conduit/multiplexer')
 var Destructor = require('destructible')
 var assert = require('assert')
 var Destructor = require('destructible')
 
+var Conduit = require('conduit')
+var Server = require('conduit/server')
+
 function Subordinate (options) {
-    this._multiplexer = null
+    this._conduit = null
     this._destructor = new Destructor
     this._interlocutor = new Interlocutor(options.middleware)
     this._userConnect = options.connect
@@ -27,11 +29,12 @@ Subordinate.prototype.listen = function (program) {
 
 Subordinate.prototype._message = function (message, socket) {
     if (message.middleware) {
-        assert(this._multiplexer == null)
-        var multiplexer = new Multiplexer(socket, socket, { object: this, method: '_connect' })
-        this._multiplexer = multiplexer
+        assert(this._conduit == null)
+        var conduit = this._conduit = new Conduit(socket, socket)
+        new Server({ object: this, method: '_connect' }, 'subordinate', conduit.read, conduit.write)
+        this._destructor.addDestructor('conduit', conduit.destroy.bind(conduit))
         this._destructor.destructible(cadence(function (async) {
-            multiplexer.listen(async())
+            conduit.listen(async())
         }), abend)
     } else {
         var buffer = new Buffer(message.buffer, 'base64')
@@ -39,9 +42,9 @@ Subordinate.prototype._message = function (message, socket) {
     }
 }
 
-Subordinate.prototype._connect = cadence(function (async, socket, envelope) {
-    new Response(this._interlocutor, socket, envelope).respond(async())
-})
+Subordinate.prototype._connect = function (socket, envelope) {
+    new Response(this._interlocutor, socket, envelope).respond(abend)
+}
 
 Subordinate.prototype.reassign = function () {
     var vargs = Array.prototype.slice.call(arguments), index = -1

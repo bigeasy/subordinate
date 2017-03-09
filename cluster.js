@@ -28,7 +28,8 @@ var Operation = require('operation/redux')
 var destroyer = require('server-destroy')
 var Request = require('nascent.rendezvous/request')
 
-var Multiplexer = require('conduit/multiplexer')
+var Conduit = require('conduit')
+var Client = require('conduit/client')
 
 var Downgrader = require('downgrader')
 Downgrader.Socket = require('downgrader/socket')
@@ -171,17 +172,19 @@ Cluster.prototype._proxy = cadence(function (async, request, response) {
                 }
                 Downgrader.Socket.connect(connect, async())
             }, function (request, socket, head) {
+                var conduit = new Conduit(socket, socket)
                 var client = {
                     destructor: new Destructor,
-                    multiplexer: new Multiplexer(socket, socket)
+                    conduit: conduit,
+                    client: new Client('subordinate', conduit.read, conduit.write)
                 }
                 client.destructor.addDestructor('socket', socket.destroy.bind(socket))
-                client.destructor.addDestructor('multiplexer', client.multiplexer.destroy.bind(client.multiplexer))
+                client.destructor.addDestructor('conduit', client.conduit.destroy.bind(client.conduit))
                 // TODO Reconsider use of Destructor.
                 // TODO Socket on error calls destructor, you got it almost
                 // right in Rendezvous.
                 client.destructor.destructible(cadence(function (async) {
-                    client.multiplexer.listen(async())
+                    client.conduit.listen(async())
                 }), abend)
 
                 this._clients[distrubution.index] = client
@@ -189,7 +192,7 @@ Cluster.prototype._proxy = cadence(function (async, request, response) {
         }
     }, function () {
         var client = this._clients[distrubution.index]
-        new Request(client.multiplexer, request, response, function (header) {
+        new Request(client.client, request, response, function (header) {
             header.addHTTPHeader('x-subordinate-key', distrubution.key)
             header.addHTTPHeader('x-subordinate-hash', distrubution.hash)
             header.addHTTPHeader('x-subordinate-index', distrubution.index)
