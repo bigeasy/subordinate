@@ -21,6 +21,7 @@
     },
     "dependencies":
     {
+                            "abend":                        "1.0.x",
                             "cadence":                      "1.0.x",
                             "destructible":                 "0.1.x",
                             "downgrader":                   "0.0.2",
