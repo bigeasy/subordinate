@@ -21,6 +21,7 @@
     },
     "dependencies":
     {
+                            "cadence":                      "1.0.x",
                             "destructible":                 "0.1.x",
                             "downgrader":                   "0.0.2",
                             "hash.fnv":                     "1.0.0",
