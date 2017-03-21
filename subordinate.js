@@ -1,7 +1,7 @@
 var cadence = require('cadence')
 var abend = require('abend')
 
-var Response = require('nascent.rendezvous/response')
+var Response = require('assignation/response')
 
 // Container for Sencha Connect middleware.
 var Interlocutor = require('interlocutor')

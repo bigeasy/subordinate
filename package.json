@@ -22,12 +22,12 @@
     "dependencies":
     {
                             "abend":                        "1.0.x",
+                            "assignation":                  "0.0.2",
                             "cadence":                      "1.0.x",
                             "destructible":                 "0.1.x",
                             "downgrader":                   "0.0.2",
                             "hash.fnv":                     "1.0.0",
                             "interlocutor":                 "0.1.x",
-                            "nascent.rendezvous":           "0.5.0",
                             "server-destroy":               "1.0.1"
     },
     "devDependencies":

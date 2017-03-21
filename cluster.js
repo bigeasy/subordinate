@@ -26,7 +26,7 @@ var interrupt = require('interrupt').createInterrupter('subordinate')
 var coalesce = require('nascent.coalesce')
 var Operation = require('operation/redux')
 var destroyer = require('server-destroy')
-var Request = require('nascent.rendezvous/request')
+var Request = require('assignation/request')
 
 var Conduit = require('conduit')
 var Client = require('conduit/client')
