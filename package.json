@@ -25,7 +25,7 @@
                             "assignation":                  "0.0.2",
                             "cadence":                      "1.0.x",
                             "destructible":                 "0.1.x",
-                            "downgrader":                   "0.0.2",
+                            "downgrader":                   "0.0.3",
                             "hash.fnv":                     "1.0.0",
                             "interlocutor":                 "0.1.x",
                             "server-destroy":               "1.0.1"
