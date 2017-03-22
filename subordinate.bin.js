@@ -31,16 +31,36 @@
 
     -w, --workers <number>
 
+    -s, --secret <string>
+
+        Secret used to authenticate specific worker routing. Exposing workers by
+        index will not be commonly useful, but it is needed sometimes during
+        development.
+
     ___ $ ___ en_US ___
 
     ___ . ___
 */
 require('arguable')(module, require('cadence')(function (async, program) {
+    var coalesce = require('extant')
+    var crypto = require('crypto')
     var Cluster = require('./cluster')
     if (!/^[\/.]/.test(program.ultimate.bind)) {
         program.validate(require('arguable/bindable'), 'bind')
     }
-    var cluster = new Cluster(program)
-    cluster.run(async())
-    program.on('shutdown', cluster.destroy.bind(cluster))
+    async(function () {
+        var secret = coalesce(program.env.SUBORDINATE_SECRET, program.ultimate.secret)
+        if (secret) {
+            return [ secret ]
+        }
+        async(function () {
+            crypto.randomBytes(256, async())
+        }, function (buffer) {
+            return [ buffer.toString('hex') ]
+        })
+    }, function (secret) {
+        var cluster = new Cluster(program, secret)
+        cluster.run(async())
+        program.on('shutdown', cluster.destroy.bind(cluster))
+    })
 }))

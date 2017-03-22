@@ -2,7 +2,6 @@
 var url = require('url')
 var cluster = require('cluster')
 var children = require('child_process')
-var crypto = require('crypto')
 var http = require('http')
 
 // Common utilities.
@@ -33,9 +32,9 @@ var Client = require('conduit/client')
 var Downgrader = require('downgrader')
 Downgrader.Socket = require('downgrader/socket')
 
-function Cluster (program) {
+function Cluster (program, secret) {
     this.isMaster = cluster.isMaster
-    this._secret = coalesce(program.env.SUBORDINATE_SECRET),
+    this._secret = secret
     this._listenerCount = coalesce(program.ultimate.listeners, 1)
     this._listeners = []
     this._workerCount = coalesce(program.ultimate.workers, 1)
@@ -84,15 +83,6 @@ Cluster.prototype._startWorker = function (index) {
 
 Cluster.prototype.run = cadence(function (async) {
     async(function () {
-        if (cluster.isMaster) {
-            async(function () {
-                crypto.randomBytes(256, async())
-            }, function (buffer) {
-                this._secret = buffer.toString('hex')
-            })
-        }
-    }, function () {
-        console.log('......', this._workerCount)
         if (cluster.isMaster && this._workerCount > 1) {
             for (var i = 0; i < this._workerCount; i++) {
                 this._startWorker(i)
