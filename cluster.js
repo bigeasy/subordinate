@@ -6,7 +6,7 @@ var crypto = require('crypto')
 var http = require('http')
 
 // Common utilities.
-var coalesce = require('nascent.coalesce')
+var coalesce = require('extant')
 
 // Control-flow utilities.
 var abend = require('abend')
@@ -23,7 +23,6 @@ var Destructor = require('destructible')
 
 // Exceptions that you can catch by type.
 var interrupt = require('interrupt').createInterrupter('subordinate')
-var coalesce = require('nascent.coalesce')
 var Operation = require('operation/redux')
 var destroyer = require('server-destroy')
 var Request = require('assignation/request')
@@ -133,6 +132,23 @@ Cluster.prototype._message = function (message, socket) {
 
 // Hash out the correct worker for a given request.
 Cluster.prototype._distribute = function (request) {
+    if (('x-subordinate-index' in request.headers)) {
+        if (request.headers['x-subordinate-secret'] != this._secret) {
+            throw 403
+        }
+        var index = parseFloat(request.headers['x-subordinate-index'])
+        if (isNaN(index) || (index | 0) !== index) {
+            throw 400
+        }
+        if (index >= this._workers.length) {
+            throw 400
+        }
+        return {
+            key: null,
+            hash: null,
+            index: +request.headers['x-subordinate-index']
+        }
+    }
     var key = JSON.stringify(this._keys.map(function (f) {
         var parsed = url.parse(request.url)
         return coalesce(f({
@@ -201,7 +217,19 @@ Cluster.prototype._proxy = cadence(function (async, request, response) {
 })
 
 Cluster.prototype._request = function (request, response) {
-    this._proxy(request, response, abend)
+    this._proxy(request, response, function (error) {
+        if (typeof error == 'number') {
+            var message = new Buffer(http.STATUS_CODES[error])
+            response.writeHead(error, http.STATUS_CODES[error], {
+                'content-type': 'text/plain',
+                'contnet-length': String(message.length)
+            })
+            response.write(message)
+            response.end()
+        } else {
+            abend(error)
+        }
+    })
 }
 
 Cluster.prototype._socket = function (request, socket) {

@@ -6,7 +6,7 @@ var Response = require('assignation/response')
 // Container for Sencha Connect middleware.
 var Interlocutor = require('interlocutor')
 
-var coalesce = require('nascent.coalesce')
+var coalesce = require('extant')
 
 var Operation = require('operation/redux')
 var Destructor = require('destructible')
