@@ -29,6 +29,7 @@ Subordinate.prototype.listen = function (program) {
 
 Subordinate.prototype._message = function (message, socket) {
     if (message.middleware) {
+        socket.write(new Buffer([ 0xaa, 0xaa, 0xaa, 0xaa ]))
         assert(this._conduit == null)
         var conduit = this._conduit = new Conduit(socket, socket)
         new Server({ object: this, method: '_connect' }, 'subordinate', conduit.read, conduit.write)

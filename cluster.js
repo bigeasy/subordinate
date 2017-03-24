@@ -1,4 +1,5 @@
 // From the Node.js API.
+var assert = require('assert')
 var url = require('url')
 var cluster = require('cluster')
 var children = require('child_process')
@@ -28,6 +29,8 @@ var Request = require('assignation/request')
 
 var Conduit = require('conduit')
 var Client = require('conduit/client')
+
+var Staccato = require('staccato')
 
 var Downgrader = require('downgrader')
 Downgrader.Socket = require('downgrader/socket')
@@ -178,22 +181,29 @@ Cluster.prototype._proxy = cadence(function (async, request, response) {
                 }
                 Downgrader.Socket.connect(connect, async())
             }, function (request, socket, head) {
-                var conduit = new Conduit(socket, socket)
-                var client = {
-                    destructor: new Destructor,
-                    conduit: conduit,
-                    client: new Client('subordinate', conduit.read, conduit.write)
-                }
-                client.destructor.addDestructor('socket', socket.destroy.bind(socket))
-                client.destructor.addDestructor('conduit', client.conduit.destroy.bind(client.conduit))
-                // TODO Reconsider use of Destructor.
-                // TODO Socket on error calls destructor, you got it almost
-                // right in Rendezvous.
-                client.destructor.destructible(cadence(function (async) {
-                    client.conduit.listen(async())
-                }), abend)
+                var readable = new Staccato.Readable(socket)
+                async(function () {
+                    readable.read(async())
+                }, function (buffer) {
+                    assert(buffer.toString('hex'), 'aaaaaaaa', 'failed to start middleware')
+                    readable.destroy()
+                    var conduit = new Conduit(socket, socket)
+                    var client = {
+                        destructor: new Destructor,
+                        conduit: conduit,
+                        client: new Client('subordinate', conduit.read, conduit.write)
+                    }
+                    client.destructor.addDestructor('socket', socket.destroy.bind(socket))
+                    client.destructor.addDestructor('conduit', client.conduit.destroy.bind(client.conduit))
+                    // TODO Reconsider use of Destructor.
+                    // TODO Socket on error calls destructor, you got it almost
+                    // right in Rendezvous.
+                    client.destructor.destructible(cadence(function (async) {
+                        client.conduit.listen(async())
+                    }), abend)
 
-                this._clients[distrubution.index] = client
+                    this._clients[distrubution.index] = client
+                })
             })
         }
     }, function () {
@@ -202,7 +212,9 @@ Cluster.prototype._proxy = cadence(function (async, request, response) {
             header.addHTTPHeader('x-subordinate-key', distrubution.key)
             header.addHTTPHeader('x-subordinate-hash', distrubution.hash)
             header.addHTTPHeader('x-subordinate-index', distrubution.index)
-        }).consume(async())
+            header.addHTTPHeader('x-subordinate-workers', this._workerCount)
+            header.addHTTPHeader('x-subordinate-secret', this._secret)
+        }.bind(this)).consume(async())
     })
 })
 
@@ -260,6 +272,8 @@ Cluster.prototype._socket = function (request, socket) {
             request.headers['x-subordinate-key'] = distribution.key
             request.headers['x-subordinate-hash'] = distribution.hash
             request.headers['x-subordinate-index'] = distribution.index
+            request.headers['x-subordinate-workers'] = this._workerCount
+            request.headers['x-subordinate-secret'] = this._secret
         }
         message = {
             module: 'subordinate',
