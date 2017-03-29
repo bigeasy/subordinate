@@ -4,6 +4,7 @@ var url = require('url')
 var cluster = require('cluster')
 var children = require('child_process')
 var http = require('http')
+var Signal = require('signal')
 
 // Common utilities.
 var coalesce = require('extant')
@@ -162,6 +163,12 @@ Cluster.prototype._proxy = cadence(function (async, request, response) {
     var distrubution = this._distribute(request)
     async(function () {
         if (this._clients[distrubution.index] == null) {
+            var client = this._clients[distrubution.index] = {
+                destructor: new Destructor,
+                conduit: null,
+                client: null,
+                initialized: new Signal
+            }
             async(function () {
                 var connect = {
                     secure: false,
@@ -188,11 +195,7 @@ Cluster.prototype._proxy = cadence(function (async, request, response) {
                     assert(buffer.toString('hex'), 'aaaaaaaa', 'failed to start middleware')
                     readable.destroy()
                     var conduit = new Conduit(socket, socket)
-                    var client = {
-                        destructor: new Destructor,
-                        conduit: conduit,
-                        client: new Client('subordinate', conduit.read, conduit.write)
-                    }
+                    client.conduit = conduit
                     client.destructor.addDestructor('socket', socket.destroy.bind(socket))
                     client.destructor.addDestructor('conduit', client.conduit.destroy.bind(client.conduit))
                     // TODO Reconsider use of Destructor.
@@ -202,9 +205,13 @@ Cluster.prototype._proxy = cadence(function (async, request, response) {
                         client.conduit.listen(async())
                     }), abend)
 
-                    this._clients[distrubution.index] = client
+                    client.client = new Client('subordinate', conduit.read, conduit.write)
+
+                    client.initialized.unlatch()
                 })
             })
+        } else if (this._clients[distrubution.index].client == null) {
+            this._clients[distrubution.index].initialized.wait(async())
         }
     }, function () {
         var client = this._clients[distrubution.index]
