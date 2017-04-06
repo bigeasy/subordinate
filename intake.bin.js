@@ -4,11 +4,12 @@ require('arguable')(module, require('cadence')(function (async, program) {
     var subordinate = new Subordinate({
         middleware: function (request, response, next) {
             if (true || url.parse(request.url).path.startsWith('/message')) {
-                console.log('HEREE!')
+                if (request.headers['x-abend']) {
+                    throw new Error
+                }
                 response.writeHead(200, { 'content-type': 'text/plain' })
                 response.write('Hello, World!\n')
                 response.end()
-                console.log('did it')
             }
         },
         connect: function (request, socket) {
