@@ -36,6 +36,8 @@ var Staccato = require('staccato')
 var Downgrader = require('downgrader')
 Downgrader.Socket = require('downgrader/socket')
 
+var Distributor = require('./distributor')
+
 function Cluster (program, secret) {
     this.isMaster = cluster.isMaster
     this._secret = secret
@@ -45,13 +47,7 @@ function Cluster (program, secret) {
     this._workers = []
     this._clients = []
     this._middleware = null
-    this._keys = program.grouped.key.map(function (key) {
-        if (~key.indexOf('$')) {
-            return new Function('$', 'return ' + key)
-        } else {
-            return require(key)
-        }
-    })
+    this._distributor = new Distributor(this._secret, this._workerCount, program.grouped.key)
     this._destructor = new Destructor('subordinate')
     this._destructor.markDestroyed(this, 'destroyed')
     this._destructor.addDestructor('kill', { object: this, method: '_kill' })
@@ -124,43 +120,8 @@ Cluster.prototype._message = function (message, socket) {
     }
 }
 
-// Hash out the correct worker for a given request.
-Cluster.prototype._distribute = function (request) {
-    if (('x-subordinate-index' in request.headers)) {
-        if (request.headers['x-subordinate-secret'] != this._secret) {
-            throw 403
-        }
-        var index = parseFloat(request.headers['x-subordinate-index'])
-        if (isNaN(index) || (index | 0) !== index) {
-            throw 400
-        }
-        if (index >= this._workers.length) {
-            throw 400
-        }
-        return {
-            key: null,
-            hash: null,
-            index: +request.headers['x-subordinate-index']
-        }
-    }
-    var key = JSON.stringify(this._keys.map(function (f) {
-        var parsed = url.parse(request.url)
-        return coalesce(f({
-            headers: request.headers,
-            url: request.url,
-            parsed: parsed,
-            query: url.parse(request.url, true).query,
-            parts: parsed.pathname.split('/').splice(1)
-        }))
-    }))
-    var buffer = new Buffer(key)
-    var hash = fnv(0, key, 0, key.length)
-    var index = hash % this._workers.length
-    return { key: key, hash: hash, index: index }
-}
-
 Cluster.prototype._proxy = cadence(function (async, request, response) {
-    var distrubution = this._distribute(request)
+    var distrubution = this._distributor.distribute(request)
     async(function () {
         if (this._clients[distrubution.index] == null) {
             var client = this._clients[distrubution.index] = {
@@ -275,7 +236,7 @@ Cluster.prototype._socket = function (request, socket) {
             method: request.method
         }
         if (this._workerCount != 0) {
-            var distribution = this._distribute(request)
+            var distribution = this._distributor.distribute(request)
             request.headers['x-subordinate-key'] = distribution.key
             request.headers['x-subordinate-hash'] = distribution.hash
             request.headers['x-subordinate-index'] = distribution.index
