@@ -124,6 +124,7 @@ Cluster.prototype._proxy = cadence(function (async, request, response) {
     var distrubution = this._distributor.distribute(request)
     async(function () {
         if (this._clients[distrubution.index] == null) {
+            console.log('CREATING CONDUIT', distrubution)
             var client = this._clients[distrubution.index] = {
                 destructor: new Destructor,
                 conduit: null,
@@ -149,10 +150,12 @@ Cluster.prototype._proxy = cadence(function (async, request, response) {
                 }
                 Downgrader.Socket.connect(connect, async())
             }, function (request, socket, head) {
+                console.log('DOWNGRADE CONDUIT', request.headers, distrubution)
                 var readable = new Staccato.Readable(socket)
                 async(function () {
                     readable.read(async())
                 }, function (buffer) {
+                    console.log('READ CONDUIT', request.headers, distrubution, buffer.toJSON())
                     assert(buffer.toString('hex'), 'aaaaaaaa', 'failed to start middleware')
                     readable.destroy()
                     var conduit = new Conduit(socket, socket)
@@ -172,6 +175,7 @@ Cluster.prototype._proxy = cadence(function (async, request, response) {
                 })
             })
         } else if (this._clients[distrubution.index].client == null) {
+            console.log('WAIT FOR CONDUIT', distrubution)
             this._clients[distrubution.index].initialized.wait(async())
         }
     }, function () {
