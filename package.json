@@ -22,19 +22,19 @@
     "dependencies":
     {
                             "abend":                        "1.0.x",
-                            "assignation":                  "0.0.2",
+                            "assignation":                  "0.2.x",
                             "cadence":                      "1.0.x",
-                            "destructible":                 "0.1.x",
-                            "downgrader":                   "0.0.3",
-                            "extant":                       "0.0.1",
-                            "signal":                       "1.8.x",
+                            "destructible":                 "0.9.x",
+                            "downgrader":                   "0.0.x",
+                            "extant":                       "1.0.x",
+                            "signal":                       "1.10.x",
                             "hash.fnv":                     "1.0.0",
-                            "interlocutor":                 "0.1.x",
+                            "interlocutor":                 "0.2.x",
                             "server-destroy":               "1.0.1"
     },
     "devDependencies":
     {
-                            "proof":                        "1.2.x"
+                            "proof":                        "3.0.x"
     },
     "main":                 "subordinate",
     "bin":

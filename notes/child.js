@@ -2,6 +2,7 @@ var net = require('net')
 process.on('message', function (message, handle) {
     switch (message.method) {
     case 'connect':
+        return
         var connect = net.connect({
             hostname: '127.0.0.1',
             port: 8888

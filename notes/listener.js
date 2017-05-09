@@ -10,7 +10,6 @@ var server = net.createServer(function (socket) {
 
 server.listen(8888, function () {
     console.log('listen')
-    child.send({
-        method: 'connect'
-    })
+    child.send({ method: 'connect' }, server)
+    console.log('sent')
 })
