@@ -63,7 +63,7 @@ Worker.prototype._socket = function (request, socket) {
     this._parent.send(message, socket)
 }
 
-Cluster.prototype._proxy = cadence(function (async, request, response) {
+Worker.prototype._proxy = cadence(function (async, request, response) {
     var distrubution = this._distributor.distribute(request)
     async(function () {
         if (this._clients[distrubution.index] == null) {

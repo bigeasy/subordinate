@@ -7,8 +7,11 @@ var children = require('child_process')
 
 // Common utilities.
 var coalesce = require('extant')
+
 // Control-flow utilities.
+var delta = require('delta')
 var cadence = require('cadence')
+var Signal = require('signal')
 
 // Controlled demolition of objects.
 var Destructible = require('destructible')
@@ -27,14 +30,12 @@ function Master (options) {
         workers: coalesce(options.program.ultimate.workers, 1)
     }
     this._listeners = []
-    this._workers = []
     this._distributor = new Distributor(this._secret, this._workerCount, options.program.grouped.key)
     this._destructible = new Destructible('subordinate')
     this._destructible.markDestroyed(this)
     this._destructible.addDestructor('kill', this, '_kill')
     this._argv = options.program.argv.slice()
     this._command = this._argv.shift()
-    this._cluster = options.cluster
 }
 
 Master.prototype.destroy = function () {
@@ -43,7 +44,6 @@ Master.prototype.destroy = function () {
 
 Master.prototype._kill = function () {
     this._listeners.forEach(function (listener) { listener.kill() })
-    this._workers.forEach(function (worker) { worker.kill() })
 }
 
 // https://groups.google.com/forum/#!msg/comp.unix.wizards/GNU3ZFJiq74/ZFeCKhnavkMJ
@@ -60,25 +60,23 @@ Master.prototype._startWorker = function (index) {
     this._workers[index] = worker
 }
 
-Master.prototype.run = function () {
-    this._cluster.setupMaster({
-        exec: path.join(__dirname, this._listener.shift())
+Master.prototype.run = cadence(function (async) {
+    cluster.setupMaster({
+        exec: path.join(__dirname, this._listener.shift()),
+        argv: this._listener
 
     })
     for (var i = 0; i < this._count.listeners; i++) {
-        this._listeners.push(this._cluster.fork({ SUBORDINATE_SECRET: this._secret }))
+        var listener = cluster.fork({ SUBORDINATE_SECRET: this._secret })
+        this._listeners.push(listener)
+        async(function () {
+            delta(async()).ee(listener).on('exit')
+        }, function (code, signal) {
+            interrupt.assert(this.destroyed, 'listener error exit', { code: code, signal: signal })
+            return []
+        })
     }
-    console.log(this._listeners[0])
-    throw new Error
-    cluster.on('exit', function (code, signal) {
-        interrupt.assert(code == 0, 'listener error exit')
-    })
-    if (this._workerCount > 1) {
-        for (var i = 0; i < this._count.workers; i++) {
-            this._startWorker(i)
-        }
-    }
-}
+})
 
 Master.prototype._message = function (message, socket) {
     if (this._workerCount == 0 && this._workers[message.index] == null) {

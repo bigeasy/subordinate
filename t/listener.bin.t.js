@@ -1,10 +1,12 @@
 require('proof')(1, require('cadence')(prove))
 
 function prove (async, assert) {
-    var bin = require('../worker.bin')
+    var bin = require('../listener.bin')
+    var io
     async(function () {
-        bin({}, async())
+        io = bin({}, async())
     }, function () {
-        console.log('here')
+        assert(true, 'running')
+        io.emit('SIGTERM')
     })
 }

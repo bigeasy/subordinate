@@ -1,1 +1,1 @@
-setInterval(function () {}, 1000)
+setInterval(function () { console.log('hello') }, 1000)
