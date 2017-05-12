@@ -1,4 +1,4 @@
-require('proof')(1, prove)
+require('proof')(5, prove)
 
 function prove (assert) {
     var Distributor = require('../distributor')
@@ -13,4 +13,42 @@ function prove (assert) {
         hash: 3807003980,
         index: 2
     }, 'hash')
+    try {
+        distrubutor.distribute({
+            headers: {
+                'x-subordinate-index': '1',
+                'x-subordinate-secret': 'y'
+            }
+        })
+    } catch (error) {
+        assert(error, 403, 'bad secret')
+    }
+    try {
+        distrubutor.distribute({
+            headers: {
+                'x-subordinate-index': 'x',
+                'x-subordinate-secret': 'x'
+            }
+        })
+    } catch (error) {
+        assert(error, 400, 'bad index')
+    }
+    try {
+        distrubutor.distribute({
+            headers: {
+                'x-subordinate-index': '3',
+                'x-subordinate-secret': 'x'
+            }
+        })
+    } catch (error) {
+        assert(error, 400, 'index out of range')
+    }
+    assert(distrubutor.distribute({
+        headers: {
+            'x-subordinate-index': '2',
+            'x-subordinate-secret': 'x'
+        }
+    }), {
+        key: null, hash: null, index: 2
+    }, 'index')
 }
