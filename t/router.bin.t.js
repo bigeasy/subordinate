@@ -1,7 +1,7 @@
 require('proof')(1, require('cadence')(prove))
 
 function prove (async, assert) {
-    var bin = require('../listener.bin')
+    var bin = require('../router.bin')
     var io
     async(function () {
         io = bin({}, async())
