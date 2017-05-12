@@ -17,14 +17,14 @@ var Destructible = require('destructible')
 // Closes all open sockets so that the HTTP server close.
 var destroyer = require('server-destroy')
 
-function Worker (bind, secret, parent) {
+function Router (bind, secret, parent) {
     this._destructible = new Destructible('worker')
     this._bind = bind
     this._secret = secret
     this._parent = parent
 }
 
-Worker.prototype._socket = function (request, socket) {
+Router.prototype._socket = function (request, socket) {
     var middleware = request.headers['x-subordinate-middleware'] == this._secret
     var message
     if (middleware) {
@@ -64,7 +64,7 @@ Worker.prototype._socket = function (request, socket) {
     this._parent.send(message, socket)
 }
 
-Worker.prototype._proxy = cadence(function (async, request, response) {
+Router.prototype._proxy = cadence(function (async, request, response) {
     var distrubution = this._distributor.distribute(request)
     async(function () {
         if (this._clients[distrubution.index] == null) {
@@ -135,7 +135,7 @@ Worker.prototype._proxy = cadence(function (async, request, response) {
     })
 })
 
-Worker.prototype._request = function (request, response) {
+Router.prototype._request = function (request, response) {
     this._proxy(request, response, function (error) {
         if (typeof error == 'number') {
             var message = new Buffer(http.STATUS_CODES[error])
@@ -151,7 +151,7 @@ Worker.prototype._request = function (request, response) {
     })
 }
 
-Worker.prototype.run = cadence(function (async) {
+Router.prototype.run = cadence(function (async) {
     var downgrader = new Downgrader
     downgrader.on('socket', Operation([ this, '_socket' ]))
 
@@ -163,4 +163,4 @@ Worker.prototype.run = cadence(function (async) {
     this._bind.listen(server, async())
 })
 
-module.exports = Worker
+module.exports = Router
