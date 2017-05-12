@@ -1,3 +1,4 @@
+// Control-flow libraries.
 var cadence = require('cadence')
 
 // Networking.
