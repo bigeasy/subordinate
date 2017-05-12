@@ -22,7 +22,7 @@ var interrupt = require('interrupt').createInterrupter('subordinate')
 // Contextualized callbacks and event handlers.
 var Operation = require('operation/variadic')
 
-function Master (options) {
+function Listener (options) {
     this._secret = options.secret
     this._listener = options.listener
     this._count ={
@@ -37,29 +37,16 @@ function Master (options) {
     this._command = this._argv.shift()
 }
 
-Master.prototype.destroy = function () {
+Listener.prototype.destroy = function () {
     this._destructible.destroy()
 }
 
-Master.prototype._kill = function () {
+// https://groups.google.com/forum/#!msg/comp.unix.wizards/GNU3ZFJiq74/ZFeCKhnavkMJ
+Listener.prototype._kill = function () {
     this._listeners.forEach(function (listener) { listener.kill() })
 }
 
-// https://groups.google.com/forum/#!msg/comp.unix.wizards/GNU3ZFJiq74/ZFeCKhnavkMJ
-
-Master.prototype._startWorker = function (index) {
-    // TODO What else do you need to set?
-    var worker = children.spawn(this._command, this._argv, {
-        stdio: [ 'inherit', 'inherit', 'inherit', 'ipc' ]
-    })
-    worker.on('message', Operation([ this, '_message' ]))
-    worker.on('exit', function (code, signal) {
-        interrupt.assert(code == 0 || signal == 'SIGTERM', 'workerExit', { code: code, signal: signal })
-    })
-    this._workers[index] = worker
-}
-
-Master.prototype.run = cadence(function (async) {
+Listener.prototype.run = cadence(function (async) {
     cluster.setupMaster({
         exec: path.join(__dirname, this._listener.shift()),
         argv: this._listener
@@ -77,11 +64,4 @@ Master.prototype.run = cadence(function (async) {
     }
 })
 
-Master.prototype._message = function (message, socket) {
-    if (this._workerCount == 0 && this._workers[message.index] == null) {
-        this._startWorker(message.index)
-    }
-    this._workers[message.index].worker.send(message, socket)
-}
-
-module.exports = Master
+module.exports = Listener
