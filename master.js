@@ -18,9 +18,9 @@ var Destructible = require('destructible')
 
 // Exceptions that you can catch by type.
 var interrupt = require('interrupt').createInterrupter('subordinate')
-var Operation = require('operation/variadic')
 
-var Distributor = require('./distributor')
+// Contextualized callbacks and event handlers.
+var Operation = require('operation/variadic')
 
 function Master (options) {
     this._secret = options.secret
@@ -30,8 +30,7 @@ function Master (options) {
         workers: coalesce(options.program.ultimate.workers, 1)
     }
     this._listeners = []
-    this._distributor = new Distributor(this._secret, this._workerCount, options.program.grouped.key)
-    this._destructible = new Destructible('subordinate')
+    this._destructible = new Destructible('master')
     this._destructible.markDestroyed(this)
     this._destructible.addDestructor('kill', this, '_kill')
     this._argv = options.program.argv.slice()
