@@ -56,7 +56,7 @@ StrawBoss.prototype.message = function (message, handle) {
 StrawBoss.prototype.run = cadence(function (async) {
     for (var i = 0; i < this._subordinate.count; i++) {
         var subordinate = children.spawn(this._subordinate.command, this._subordinate.argv, {
-            stdio: [ 'inherit', 'inherit', 'inherit', 'ipc' ]
+            stdio: [ 0, 1, 2, 'ipc' ]
         })
         this._subordinate.array[i] = subordinate
         subordinate.on('message', Operation([ this, 'message' ]))
