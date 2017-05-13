@@ -37,23 +37,51 @@ var interrupt = require('interrupt').createInterrupter('subordinate')
 // Contextualized callbacks and event handlers.
 var Operation = require('operation/variadic')
 
-// Create a listener. The `secret` is used to indicate that a request has been
-// routed and is supposed to go to a specific worker.
+// Create a listener that will launch the router executable specfied by the
+// `argv` option.
+//
+// The Node.js Cluster module spreads the TCP connections to a port across
+// multiple workers. The router is the child process that shares the work of
+// responding to parituclar sockets or HTTP requests.
+//
+// Subordinate implements a worker pinning where
+//
+// We let the Cluster module distribute he work using its load balancing
+// strategy. The router will inspect the request for a key, hash the key, and
+// then send it to the correct worker based on the hashed key value.
+//
+// That describes hashed operation which is what's brining this project to
+// life. Other modes operation suggest themselves, but I'm not using them quite
+// yet.
+//
+// The `secret` option is used to indicate that a request has
+// been routed and is supposed to go to a specific worker. The when a request
+// comes in from outside the application the router that receives it will chose
+// a worker based on a hash of the key value. It then forwards the request
+// through a long-lived multiplexed connection to the worker at the hashed
+// index.
+//
+// If you want to directly specify a worker by index you would specify the index
+// in a request header along with the secret to indicate that you know what
+// you're doing.
+//
+// For inter-process communication between trusted processes the secret may be
+// generated externally and passed into the subordinate executable. Otherwise,
+// it is generated internally.
 
 //
 function Listener (options) {
-    this._secret = options.secret
-    this._listener = options.listener
-    this._count ={
-        listeners: coalesce(options.program.ultimate.listeners, 1),
-        workers: coalesce(options.program.ultimate.workers, 1)
+    var argv = options.argv.slice()
+    this._router ={
+        command: argv.shift(),
+        argv: argv,
+        count: coalesce(options.routers, 1),
+        array: []
     }
-    this._listeners = []
+    this._secret = options.secret
     this._destructible = new Destructible('master')
     this._destructible.markDestroyed(this)
     this._destructible.addDestructor('kill', this, '_kill')
-    this._argv = options.program.argv.slice()
-    this._command = this._argv.shift()
 }
 
 Listener.prototype.destroy = function () {
@@ -62,18 +90,14 @@ Listener.prototype.destroy = function () {
 
 // https://groups.google.com/forum/#!msg/comp.unix.wizards/GNU3ZFJiq74/ZFeCKhnavkMJ
 Listener.prototype._kill = function () {
-    this._listeners.forEach(function (listener) { listener.kill() })
+    this._router.array.forEach(function (listener) { listener.kill() })
 }
 
 Listener.prototype.run = cadence(function (async) {
-    cluster.setupMaster({
-        exec: path.join(__dirname, this._listener.shift()),
-        argv: this._listener
-
-    })
-    for (var i = 0; i < this._count.listeners; i++) {
+    cluster.setupMaster({ exec: this._router.command, argv: this._router.argv })
+    for (var i = 0; i < this._router.count; i++) {
         var listener = cluster.fork({ SUBORDINATE_SECRET: this._secret })
-        this._listeners.push(listener)
+        this._router.array.push(listener)
         async(function () {
             delta(async()).ee(listener).on('exit')
         }, function (code, signal) {
