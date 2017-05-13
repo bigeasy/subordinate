@@ -205,8 +205,18 @@ server around and no your are not going to implement HTTP parsing.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-8">&#182;</a>
               </div>
-              <p>Create a listener. The <code>secret</code> is used to indicate that a request has been
-routed and is supposed to go to a specific worker.</p>
+              <p>Create a listener that will launch the router executable specfied in <code>argv</code>
+option. The <code>secret</code> option is used to indicate that a request has been
+routed and is supposed to go to a specific worker. The when a request comes
+in from outside the application the router that receives it will chose a
+worker based on a hash of the key value. It then forwards the request through
+a long-lived multiplexed connection to the worker at the hashed index.</p>
+<p>If you want to directly specify a worker by index you would specify the index
+in a request header along with the secret to indicate that you know what
+you’re doing.</p>
+<p>For inter-process communication between trusted processes the secret may be
+generated externally and passed into the subordinate executable. Otherwise,
+it is generated internally.</p>
 
             </div>
 
@@ -223,18 +233,16 @@ routed and is supposed to go to a specific worker.</p>
             </div>
 
             <div class="content"><div class='highlight'><pre><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">Listener</span> (<span class="hljs-params">options</span>) </span>{
-    <span class="hljs-keyword">this</span>._secret = options.secret
-    <span class="hljs-keyword">this</span>._listener = options.listener
-    <span class="hljs-keyword">this</span>._count ={
-        <span class="hljs-attr">listeners</span>: coalesce(options.program.ultimate.listeners, <span class="hljs-number">1</span>),
-        <span class="hljs-attr">workers</span>: coalesce(options.program.ultimate.workers, <span class="hljs-number">1</span>)
+    <span class="hljs-keyword">this</span>._router ={
+        <span class="hljs-attr">command</span>: argv.shift(),
+        <span class="hljs-attr">argv</span>: argv,
+        <span class="hljs-attr">count</span>: coalesce(options.routers, <span class="hljs-number">1</span>),
+        <span class="hljs-attr">array</span>: []
     }
-    <span class="hljs-keyword">this</span>._listeners = []
+    <span class="hljs-keyword">this</span>._secret = options.secret
     <span class="hljs-keyword">this</span>._destructible = <span class="hljs-keyword">new</span> Destructible(<span class="hljs-string">'master'</span>)
     <span class="hljs-keyword">this</span>._destructible.markDestroyed(<span class="hljs-keyword">this</span>)
     <span class="hljs-keyword">this</span>._destructible.addDestructor(<span class="hljs-string">'kill'</span>, <span class="hljs-keyword">this</span>, <span class="hljs-string">'_kill'</span>)
-    <span class="hljs-keyword">this</span>._argv = options.program.argv.slice()
-    <span class="hljs-keyword">this</span>._command = <span class="hljs-keyword">this</span>._argv.shift()
 }
 
 Listener.prototype.destroy = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
