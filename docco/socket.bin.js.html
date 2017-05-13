@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>socket.bin.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+
+      <ul id="jump_to">
+        <li>
+          <a class="large" href="javascript:void(0);">Jump To &hellip;</a>
+          <a class="small" href="javascript:void(0);">+</a>
+          <div id="jump_wrapper">
+          <div id="jump_page_wrapper">
+            <div id="jump_page">
+
+
+                <a class="source" href="distributor.js.html">
+                  distributor.js
+                </a>
+
+
+                <a class="source" href="intake.bin.js.html">
+                  intake.bin.js
+                </a>
+
+
+                <a class="source" href="listener.js.html">
+                  listener.js
+                </a>
+
+
+                <a class="source" href="router.bin.js.html">
+                  router.bin.js
+                </a>
+
+
+                <a class="source" href="router.js.html">
+                  router.js
+                </a>
+
+
+                <a class="source" href="socket.bin.js.html">
+                  socket.bin.js
+                </a>
+
+
+                <a class="source" href="strawboss.js.html">
+                  strawboss.js
+                </a>
+
+
+                <a class="source" href="subordinate.bin.js.html">
+                  subordinate.bin.js
+                </a>
+
+
+                <a class="source" href="subordinate.js.html">
+                  subordinate.js
+                </a>
+
+            </div>
+          </div>
+        </li>
+      </ul>
+
+    <ul class="sections">
+
+          <li id="title">
+              <div class="annotation">
+                  <h1>socket.bin.js</h1>
+              </div>
+          </li>
+
+
+
+        <li id="section-1">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+
+            </div>
+
+            <div class="content"><div class='highlight'><pre><span class="hljs-comment">/*
+    ___ usage ___ en_US ___
+    usage: client &lt;options&gt; [worker]
+
+    options:
+
+    -l, --location &lt;path or address:port&gt;
+
+    -h, --header &lt;key=value&gt;
+
+        The name of a header to provide.
+
+    ___ $ ___ en_US ___
+
+    ___ . ___
+ */</span>
+<span class="hljs-built_in">require</span>(<span class="hljs-string">'arguable'</span>)(<span class="hljs-built_in">module</span>, <span class="hljs-built_in">require</span>(<span class="hljs-string">'cadence'</span>)(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async, program</span>) </span>{
+    <span class="hljs-keyword">var</span> delta = <span class="hljs-built_in">require</span>(<span class="hljs-string">'delta'</span>)
+    <span class="hljs-keyword">var</span> Downgrader = { <span class="hljs-attr">Socket</span>: <span class="hljs-built_in">require</span>(<span class="hljs-string">'downgrader/socket'</span>) }
+    <span class="hljs-keyword">var</span> headers = {}
+    program.grouped.header.forEach(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">header</span>) </span>{
+        <span class="hljs-keyword">var</span> $ = <span class="hljs-regexp">/^([^=]+)=(.*)$/</span>.exec(header)
+        headers[$[<span class="hljs-number">1</span>]] = $[<span class="hljs-number">2</span>]
+    })
+    <span class="hljs-keyword">var</span> location = program.ultimate.location, request
+    <span class="hljs-keyword">if</span> (<span class="hljs-regexp">/^[.\/]/</span>.test(location)) {
+        request = {
+            <span class="hljs-attr">secure</span>: <span class="hljs-literal">false</span>,
+            <span class="hljs-attr">socketPath</span>: location,
+            <span class="hljs-attr">headers</span>: headers
+        }
+    } <span class="hljs-keyword">else</span> {
+        location = location.split(<span class="hljs-string">':'</span>)
+        request = {
+            <span class="hljs-attr">secure</span>: <span class="hljs-literal">false</span>,
+            <span class="hljs-attr">host</span>: location[<span class="hljs-number">0</span>],
+            <span class="hljs-attr">port</span>: +location[<span class="hljs-number">1</span>],
+            <span class="hljs-attr">headers</span>: headers
+        }
+    }
+    <span class="hljs-keyword">async</span>(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
+        Downgrader.Socket.connect(request, <span class="hljs-keyword">async</span>())
+    }, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">request, socket, head</span>) </span>{
+        <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'upgraded'</span>, head.length)
+        delta(<span class="hljs-keyword">async</span>()).ee(socket).on(<span class="hljs-string">'data'</span>, []).on(<span class="hljs-string">'end'</span>)
+    }, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">data</span>) </span>{
+        <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'!'</span>, Buffer.concat(data).toString())
+    })
+}))</pre></div></div>
+
+        </li>
+
+    </ul>
+  </div>
+</body>
+</html>
