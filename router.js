@@ -25,8 +25,8 @@ function Router (bind, secret, parent) {
 }
 
 Router.prototype._socket = function (request, socket) {
-    var middleware = request.headers['x-subordinate-middleware'] == this._secret
     var message
+    var middleware = request.headers['x-subordinate-is-middleware'] == this._secret
     if (middleware) {
         message = {
             module: 'subordinate',
@@ -68,7 +68,6 @@ Router.prototype._proxy = cadence(function (async, request, response) {
     var distrubution = this._distributor.distribute(request)
     async(function () {
         if (this._clients[distrubution.index] == null) {
-            console.log('CREATING CONDUIT', distrubution)
             var client = this._clients[distrubution.index] = {
                 destructor: new Destructor,
                 conduit: null,
@@ -82,8 +81,9 @@ Router.prototype._proxy = cadence(function (async, request, response) {
                     port: this._bind.port,
                     socketPath: this._bind,
                     headers: {
-                        'x-subordinate-secret': this._secret,
-                        'x-subordinate-index': distrubution.index
+                        'x-subordinate-is-middleware': this._secret,
+                        'x-subordinate-index': distrubution.index,
+                        'x-subordinate-from': request.headers['x-subordinate-index']
                     }
                 }
                 if (typeof connect.socketPath == 'string') {
@@ -94,12 +94,10 @@ Router.prototype._proxy = cadence(function (async, request, response) {
                 }
                 Downgrader.Socket.connect(connect, async())
             }, function (request, socket, head) {
-                console.log('DOWNGRADE CONDUIT', request.headers, distrubution)
                 var readable = new Staccato.Readable(socket)
                 async(function () {
                     readable.read(async())
                 }, function (buffer) {
-                    console.log('READ CONDUIT', request.headers, distrubution, buffer.toJSON())
                     assert(buffer.toString('hex'), 'aaaaaaaa', 'failed to start middleware')
                     readable.destroy()
                     var conduit = new Conduit(socket, socket)
@@ -119,7 +117,6 @@ Router.prototype._proxy = cadence(function (async, request, response) {
                 })
             })
         } else if (this._clients[distrubution.index].client == null) {
-            console.log('WAIT FOR CONDUIT', distrubution)
             this._clients[distrubution.index].initialized.wait(async())
         }
     }, function () {

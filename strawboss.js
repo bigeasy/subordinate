@@ -45,6 +45,7 @@ StrawBoss.prototype.send = function (message, handle) {
     })
 }
 
+// TODO Starting workers as requested for pipelines would be done here now.
 StrawBoss.prototype.message = function (message, handle) {
     if (message.module == 'subordinate') {
         this._subordinate.array[message.index].send(message, coalesce(handle))

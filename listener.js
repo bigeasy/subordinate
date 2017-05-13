@@ -1,3 +1,18 @@
+// The listener implements a Node.js Cluster "Master." I call it a listener
+// because I think of it as listening to the bound port.
+//
+// Our listener implementation starts the cluster workers. It uses the
+// `Cluster.setupMaster` method to specify a specific worker executable instead
+// of using the behavior that looks like fork yet behaves nothing like fork and
+// is therefore very confusing.
+//
+// In case you ever forget; you must use cluster to support Windows. Your
+// support here should be enough to evolve a Windows implementation that is as
+// performant as Node.js can be on Windows. Windows is slow about passing
+// handles, so you shouldn't roll your own handle passing strategy. It would
+// only work for TCP/TLS anyway. You can't pass the TCP handles of an HTTP
+// server around and no your are not going to implement HTTP parsing.
+
 // From the Node.js API.
 var path = require('path')
 var assert = require('assert')
@@ -22,6 +37,10 @@ var interrupt = require('interrupt').createInterrupter('subordinate')
 // Contextualized callbacks and event handlers.
 var Operation = require('operation/variadic')
 
+// Create a listener. The `secret` is used to indicate that a request has been
+// routed and is supposed to go to a specific worker.
+
+//
 function Listener (options) {
     this._secret = options.secret
     this._listener = options.listener
