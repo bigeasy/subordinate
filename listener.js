@@ -78,7 +78,6 @@ function Listener (options) {
         count: coalesce(options.routers, 1),
         array: []
     }
-    this._secret = options.secret
     this._destructible = new Destructible('master')
     this._destructible.markDestroyed(this)
     this._destructible.addDestructor('kill', this, '_kill')
@@ -93,10 +92,10 @@ Listener.prototype._kill = function () {
     this._router.array.forEach(function (listener) { listener.kill() })
 }
 
-Listener.prototype.run = cadence(function (async) {
+Listener.prototype.run = cadence(function (async, env) {
     cluster.setupMaster({ exec: this._router.command, argv: this._router.argv })
     for (var i = 0; i < this._router.count; i++) {
-        var listener = cluster.fork({ SUBORDINATE_SECRET: this._secret })
+        var listener = cluster.fork(env)
         this._router.array.push(listener)
         async(function () {
             delta(async()).ee(listener).on('exit')
