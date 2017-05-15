@@ -1,4 +1,4 @@
-// Common utilities.
+// Return the first not null-like value.
 var coalesce = require('extant')
 
 // Control-flow utilities.
@@ -6,6 +6,7 @@ var delta = require('delta')
 var cadence = require('cadence')
 var Signal = require('signal')
 
+// Node.js utilities.
 var children = require('child_process')
 
 // Controlled demolition of objects.

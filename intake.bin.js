@@ -1,3 +1,6 @@
+// Example executable.
+
+//
 require('arguable')(module, require('cadence')(function (async, program) {
     var url = require('url')
     var Subordinate = require('./subordinate')

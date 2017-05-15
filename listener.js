@@ -20,7 +20,7 @@ var url = require('url')
 var cluster = require('cluster')
 var children = require('child_process')
 
-// Common utilities.
+// Return the first not null-like value.
 var coalesce = require('extant')
 
 // Control-flow utilities.
@@ -37,6 +37,8 @@ var interrupt = require('interrupt').createInterrupter('subordinate')
 // Contextualized callbacks and event handlers.
 var Operation = require('operation/variadic')
 
+// TODO Move this since I've generalized.
+//
 // Create a listener that will launch the router executable specfied by the
 // `argv` option.
 //

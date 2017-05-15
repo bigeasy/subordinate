@@ -1,10 +1,10 @@
+// Node.js API.
+var http = require('http')
+
 // Control-flow libraries.
 var cadence = require('cadence')
 
-// Networking.
-var http = require('http')
-
-// User specified callback wrapper.
+// Contextualized callbacks and event handlers.
 var Operation = require('operation/variadic')
 
 // Convert an HTTP request into a raw socket.

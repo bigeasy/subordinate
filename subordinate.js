@@ -1,26 +1,37 @@
+// Node.js API.
+var assert = require('assert')
+
+// Control-flow utilites.
 var cadence = require('cadence')
 var abend = require('abend')
 
+// Proxy an HTTP request over socket dedicated to Conduit.
 var Response = require('assignation/response')
 
 // Container for Sencha Connect middleware.
 var Interlocutor = require('interlocutor')
 
+// Return the first not null-like value.
 var coalesce = require('extant')
 
+// Contextualized callbacks and event handlers.
 var Operation = require('operation/redux')
-var Destructor = require('destructible')
-var assert = require('assert')
+
+// Controlled demolition of objects.
 var Destructor = require('destructible')
 
+// Raw-socket multiplexing and network patterns.
 var Conduit = require('conduit')
 var Server = require('conduit/server')
 
+// Construct a `Subordinate` with Sencha Connect middleware and an optional
+
+//
 function Subordinate (options) {
     this._conduit = null
     this._destructor = new Destructor
     this._interlocutor = new Interlocutor(options.middleware)
-    this._userConnect = options.connect
+    this._userConnect = coalesce(options.connect)
 }
 
 Subordinate.prototype.listen = function (program) {

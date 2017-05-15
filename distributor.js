@@ -1,7 +1,18 @@
+// Node.js API.
 var url = require('url')
+
+// Pretty good, very simple 32-bit hash function.
 var fnv = require('hash.fnv')
+
+// Return the first not null-like value.
 var coalesce = require('extant')
 
+// Construct a distributor. The secret is used to authorize selecting a specific
+// index overridding the hash. Workers is the count of workers used to select a
+// worker index from a hashed key. Keys is an array of functions that extract
+// key material from HTTP headers
+
+//
 function Distributor (secret, workers, keys) {
     this._secret = secret
     this._workers = workers
@@ -14,6 +25,20 @@ function Distributor (secret, workers, keys) {
     })
 }
 
+// When we're given a valid secret, we will allow the caller to specify the
+// index of a specific worker instead of hashing.
+
+// Otherwise we create a hash by first using the user supplied extractor
+// functions to extract key material from the header. We pass an object to each
+// function. The object contains the header properties raw and a few properties
+// parsed out of the raw headers. The return value of of a key extractor
+// function better be a JSON object because it is going to be serialized as JSON
+// for use as a hash key. `undefined` is coaleseced to `null`.
+//
+// The hash of the JSON value of the extractor keys is used to choose the index
+// of a worker.
+
+//
 Distributor.prototype.distribute = function (request) {
     if (('x-subordinate-index' in request.headers)) {
         if (request.headers['x-subordinate-secret'] != this._secret) {
@@ -48,4 +73,5 @@ Distributor.prototype.distribute = function (request) {
     return { key: key, hash: hash, index: index }
 }
 
+// Module as function export.
 module.exports = Distributor
