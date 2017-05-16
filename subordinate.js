@@ -29,6 +29,7 @@ var Server = require('conduit/server')
 //
 function Subordinate (options) {
     this._conduit = null
+    this._process = coalesce(options.process, process)
     this._destructor = new Destructor
     this._interlocutor = new Interlocutor(options.middleware)
     this._userConnect = coalesce(options.connect)
@@ -71,7 +72,7 @@ Subordinate.prototype.reassign = function () {
     // a request header. If they have binary data they can serialize to base 64
     // and use a request header. This does not accommodate a lot of data. It
     // shouldn't. It's going to go through `process.send`, after all.
-    process.send({
+    this._process.send({
         module: 'subordinate',
         method: 'socket',
         index: index,
