@@ -60,7 +60,7 @@ Subordinate.prototype._connect = function (socket, envelope) {
 }
 
 Subordinate.prototype.reassign = function () {
-    var vargs = Array.prototype.slice.call(arguments), index = -1
+    var vargs = Array.prototype.slice.call(arguments), index = null
     if (typeof vargs[0] == 'number') {
         index = vargs.shift()
     }

@@ -1,4 +1,4 @@
-require('proof')(3, require('cadence')(prove))
+require('proof')(5, require('cadence')(prove))
 
 function prove (async, assert) {
     var events = require('events')
@@ -32,6 +32,35 @@ function prove (async, assert) {
     var socket = {}
 
     subordinate.reassign(1, {
+        httpVersion: '1.1',
+        headers: {},
+        url: '/',
+        method: 'GET',
+        rawHeaders: []
+    }, socket)
+
+    var subordinate = new Subordinate({
+        process: {
+            send: function (message, handle) {
+                assert(message, {
+                    module: 'subordinate',
+                    method: 'socket',
+                    index: null,
+                    buffer: '',
+                    body: {
+                        httpVersion: '1.1',
+                        headers: {},
+                        url: '/',
+                        method: 'GET',
+                        rawHeaders: []
+                    }
+                }, 'rehash message')
+                assert(handle === socket, 'rehash handle')
+            }
+        }
+    })
+
+    subordinate.reassign({
         httpVersion: '1.1',
         headers: {},
         url: '/',
