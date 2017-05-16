@@ -33,10 +33,7 @@ function Subordinate (options) {
     this._destructible = new Destructible
     this._interlocutor = new Interlocutor(options.middleware)
     this._userConnect = coalesce(options.connect)
-}
-
-Subordinate.prototype.listen = function (program) {
-    program.on('message', Operation({ object: this, method: '_message' }))
+    this._process.on('message', Operation({ object: this, method: '_message' }))
 }
 
 Subordinate.prototype._message = function (message, socket) {

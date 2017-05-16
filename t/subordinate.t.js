@@ -6,27 +6,29 @@ function prove (async, assert) {
     var Subordinate = require('../subordinate')
     assert(Subordinate, 'require')
 
-    var process = new events.EventEmitter
+    function createProcess (send) {
+        var process = new events.EventEmitter
+        process.send = send
+        return process
+    }
 
     var subordinate = new Subordinate({
-        process: {
-            send: function (message, handle) {
-                assert(message, {
-                    module: 'subordinate',
-                    method: 'socket',
-                    index: 1,
-                    buffer: '',
-                    body: {
-                        httpVersion: '1.1',
-                        headers: {},
-                        url: '/',
-                        method: 'GET',
-                        rawHeaders: []
-                    }
-                }, 'reassign message')
-                assert(handle === socket, 'reassign handle')
-            }
-        }
+        process: createProcess(function (message, handle) {
+            assert(message, {
+                module: 'subordinate',
+                method: 'socket',
+                index: 1,
+                buffer: '',
+                body: {
+                    httpVersion: '1.1',
+                    headers: {},
+                    url: '/',
+                    method: 'GET',
+                    rawHeaders: []
+                }
+            }, 'reassign message')
+            assert(handle === socket, 'reassign handle')
+        })
     })
 
     var socket = {}
@@ -40,24 +42,22 @@ function prove (async, assert) {
     }, socket)
 
     var subordinate = new Subordinate({
-        process: {
-            send: function (message, handle) {
-                assert(message, {
-                    module: 'subordinate',
-                    method: 'socket',
-                    index: null,
-                    buffer: '',
-                    body: {
-                        httpVersion: '1.1',
-                        headers: {},
-                        url: '/',
-                        method: 'GET',
-                        rawHeaders: []
-                    }
-                }, 'rehash message')
-                assert(handle === socket, 'rehash handle')
-            }
-        }
+        process: createProcess(function (message, handle) {
+            assert(message, {
+                module: 'subordinate',
+                method: 'socket',
+                index: null,
+                buffer: '',
+                body: {
+                    httpVersion: '1.1',
+                    headers: {},
+                    url: '/',
+                    method: 'GET',
+                    rawHeaders: []
+                }
+            }, 'rehash message')
+            assert(handle === socket, 'rehash handle')
+        })
     })
 
     subordinate.reassign({
