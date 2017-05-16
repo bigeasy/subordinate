@@ -18,7 +18,7 @@ var coalesce = require('extant')
 var Operation = require('operation/redux')
 
 // Controlled demolition of objects.
-var Destructor = require('destructible')
+var Destructible = require('destructible')
 
 // Raw-socket multiplexing and network patterns.
 var Conduit = require('conduit')
@@ -30,7 +30,7 @@ var Server = require('conduit/server')
 function Subordinate (options) {
     this._conduit = null
     this._process = coalesce(options.process, process)
-    this._destructor = new Destructor
+    this._destructible = new Destructible
     this._interlocutor = new Interlocutor(options.middleware)
     this._userConnect = coalesce(options.connect)
 }
@@ -45,8 +45,8 @@ Subordinate.prototype._message = function (message, socket) {
         assert(this._conduit == null)
         var conduit = this._conduit = new Conduit(socket, socket)
         new Server({ object: this, method: '_connect' }, 'subordinate', conduit.read, conduit.write)
-        this._destructor.addDestructor('conduit', conduit.destroy.bind(conduit))
-        this._destructor.destructible(cadence(function (async) {
+        this._destructible.addDestructor('conduit', conduit, 'destroy')
+        this._destructible.destructible(cadence(function (async) {
             conduit.listen(async())
         }), abend)
     } else {
