@@ -1,4 +1,4 @@
-require('proof')(5, require('cadence')(prove))
+require('proof')(8, require('cadence')(prove))
 
 function prove (async, assert) {
     var events = require('events')
@@ -71,9 +71,23 @@ function prove (async, assert) {
         rawHeaders: []
     }, socket)
 
+    var process = createProcess(function () {})
     var subordinate = new Subordinate({
-        process: createProcess(function () {})
+        connect: function (header, socket, buffer) {
+            assert(header, { key: 1 }, 'header')
+            assert(socket, {}, 'socket')
+            assert(buffer.toString('hex'), 'aaaa', 'buffer')
+        },
+        process: process
     })
 
     process.emit('message', {}) // no op
+    process.emit('message', {
+        module: 'subordinate',
+        method: 'socket',
+        buffer: new Buffer([ 0xaa, 0xaa ]).toString('base64'),
+        body: {
+            key: 1
+        }
+    }, socket)
 }
