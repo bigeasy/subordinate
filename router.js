@@ -31,7 +31,8 @@ Router.prototype._socket = function (request, socket) {
         message = {
             module: 'subordinate',
             method: 'middleware',
-            index: +request.headers['x-subordinate-index'],
+            from: +request.headers['x-subordinate-router-index'],
+            to: +request.headers['x-subordinate-index'],
             buffer: '',
             body: null
         }

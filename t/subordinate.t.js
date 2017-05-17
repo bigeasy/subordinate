@@ -2,6 +2,9 @@ require('proof')(5, require('cadence')(prove))
 
 function prove (async, assert) {
     var events = require('events')
+    var delta = require('delta')
+    var Request = require('assignation/request')
+    var abend = require('abend')
 
     var Subordinate = require('../subordinate')
     assert(Subordinate, 'require')
@@ -67,4 +70,10 @@ function prove (async, assert) {
         method: 'GET',
         rawHeaders: []
     }, socket)
+
+    var subordinate = new Subordinate({
+        process: createProcess(function () {})
+    })
+
+    process.emit('message', {}) // no op
 }

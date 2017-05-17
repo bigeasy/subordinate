@@ -28,7 +28,7 @@ var Server = require('conduit/server')
 
 //
 function Subordinate (options) {
-    this._conduit = null
+    this._conduits = {}
     this._process = coalesce(options.process, process)
     this._destructible = new Destructible
     this._interlocutor = new Interlocutor(options.middleware)
@@ -37,15 +37,19 @@ function Subordinate (options) {
 }
 
 Subordinate.prototype._message = function (message, socket) {
-    if (message.middleware) {
-        socket.write(new Buffer([ 0xaa, 0xaa, 0xaa, 0xaa ]))
-        assert(this._conduit == null)
-        var conduit = this._conduit = new Conduit(socket, socket)
+    if (message.module != 'subordinate') {
+        return
+    }
+    if (message.method == 'middleware') {
+        assert(this._conduits[message.from] == null)
+        var conduit = this._conduits[message.from] = new Conduit(socket, socket)
         new Server({ object: this, method: '_connect' }, 'subordinate', conduit.read, conduit.write)
-        this._destructible.addDestructor('conduit', conduit, 'destroy')
-        this._destructible.destructible(cadence(function (async) {
-            conduit.listen(async())
-        }), abend)
+        this._destructible.addDestructor([ 'conduit', message.from ], conduit, 'destroy')
+        this._destructible.stack('listen', function (ready, callback) {
+            conduit.listen(callback)
+            ready.unlatch()
+        }, abend)
+        socket.write(new Buffer([ 0xaa, 0xaa, 0xaa, 0xaa ]))
     } else {
         var buffer = new Buffer(message.buffer, 'base64')
         this._userConnect.call(null, message.body, socket, buffer)
@@ -84,5 +88,8 @@ Subordinate.prototype.reassign = function () {
     }, socket)
 }
 
+Subordinate.prototype.destroy = function () {
+    this._destructible.destroy()
+}
 
 module.exports = Subordinate
