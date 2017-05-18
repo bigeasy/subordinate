@@ -7,14 +7,32 @@ var fnv = require('hash.fnv')
 // Return the first not null-like value.
 var coalesce = require('extant')
 
+
+function Distribution (distributor, key, hash, index) {
+    this._distributor = distributor
+    this.key = key
+    this.hash = hash
+    this.index = index
+}
+
+Distribution.prototype.setHeaders = function (set) {
+    set('x-subordinate-key', String(this.key))
+    set('x-subordinate-hash', String(this.hash))
+    set('x-subordinate-index', String(this.index))
+    set('x-subordinate-request-index', String(this._distributor._index))
+    set('x-subordinate-workers', String(this._distributor._workers))
+    set('x-subordinate-secret', String(this._distributor.secret))
+}
+
 // Construct a distributor. The secret is used to authorize selecting a specific
 // index overridding the hash. Workers is the count of workers used to select a
 // worker index from a hashed key. Keys is an array of functions that extract
 // key material from HTTP headers
 
 //
-function Distributor (secret, workers, keys) {
-    this._secret = secret
+function Distributor (index, secret, workers, keys) {
+    this._index = index
+    this.secret = secret
     this._workers = workers
     this._keys = keys.map(function (key) {
         if (~key.indexOf('$')) {
@@ -40,8 +58,8 @@ function Distributor (secret, workers, keys) {
 
 //
 Distributor.prototype.distribute = function (request) {
-    if (('x-subordinate-index' in request.headers)) {
-        if (request.headers['x-subordinate-secret'] != this._secret) {
+    if ('x-subordinate-index' in request.headers) {
+        if (request.headers['x-subordinate-secret'] != this.secret) {
             throw 403
         }
         var index = parseFloat(request.headers['x-subordinate-index'])
@@ -57,6 +75,7 @@ Distributor.prototype.distribute = function (request) {
             index: +request.headers['x-subordinate-index']
         }
     }
+
     var key = JSON.stringify(this._keys.map(function (f) {
         var parsed = url.parse(request.url)
         return coalesce(f({
@@ -67,10 +86,12 @@ Distributor.prototype.distribute = function (request) {
             parts: parsed.pathname.split('/').splice(1)
         }))
     }))
+
     var buffer = new Buffer(key)
     var hash = fnv(0, key, 0, key.length)
     var index = hash % this._workers
-    return { key: key, hash: hash, index: index }
+
+    return new Distribution(this, key, hash, index)
 }
 
 // Module as function export.
