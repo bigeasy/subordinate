@@ -7,7 +7,6 @@ var fnv = require('hash.fnv')
 // Return the first not null-like value.
 var coalesce = require('extant')
 
-
 function Distribution (distributor, key, hash, index) {
     this._distributor = distributor
     this.key = key
@@ -19,7 +18,7 @@ Distribution.prototype.setHeaders = function (set) {
     set('x-subordinate-key', String(this.key))
     set('x-subordinate-hash', String(this.hash))
     set('x-subordinate-index', String(this.index))
-    set('x-subordinate-request-index', String(this._distributor._index))
+    set('x-subordinate-from', String(this._distributor.index))
     set('x-subordinate-workers', String(this._distributor._workers))
     set('x-subordinate-secret', String(this._distributor.secret))
 }
@@ -31,7 +30,7 @@ Distribution.prototype.setHeaders = function (set) {
 
 //
 function Distributor (index, secret, workers, keys) {
-    this._index = index
+    this.index = index
     this.secret = secret
     this._workers = workers
     this._keys = keys.map(function (key) {

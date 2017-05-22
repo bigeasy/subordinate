@@ -5,6 +5,10 @@ var http = require('http')
 var cadence = require('cadence')
 var Signal = require('signal')
 var delta = require('delta')
+var abend = require('abend')
+
+// Read and write streams with error-first callbacks.
+var Staccato = require('staccato')
 
 // Contextualized callbacks and event handlers.
 var Operation = require('operation/variadic')
@@ -19,8 +23,22 @@ var Destructible = require('destructible')
 // Closes all open sockets so that the HTTP server close.
 var destroyer = require('server-destroy')
 
+// Exceptions that you can catch by type.
+var interrupt = require('interrupt').createInterrupter('subordinate')
+
+// Convert thrown integers into HTTP error codes.
+var errorify = require('./errorify')(abend)
+
+// Evented multiplexing of Node.js streams.
+var Conduit = require('conduit')
+Conduit.Client = require('conduit/client')
+
+// Proxy HTTP requests over a multiplexed stream.
+var Assignation = { Request: require('assignation/request') }
+
 function Router (options) {
     this._destructible = new Destructible('worker')
+    this._proxies = {}
     this._bind = options.bind
     this._parent = options.parent
     this._distributor = options.distributor
@@ -34,7 +52,7 @@ Router.prototype._socket = function (request, socket) {
         message = {
             module: 'subordinate',
             method: 'middleware',
-            from: +request.headers['x-subordinate-router-index'],
+            from: +request.headers['x-subordinate-from'],
             to: +request.headers['x-subordinate-index'],
             buffer: '',
             body: null
@@ -48,11 +66,9 @@ Router.prototype._socket = function (request, socket) {
             url: request.url,
             method: request.method
         }
-        if (this._workerCount != 0) {
-            this._distributor.distribute(request).setHeaders(function (name, value) {
-                request.headers[name] = value
-            })
-        }
+        this._distributor.distribute(request).setHeaders(function (name, value) {
+            request.headers[name] = value
+        })
         message = {
             module: 'subordinate',
             method: 'socket',
@@ -67,54 +83,59 @@ Router.prototype._socket = function (request, socket) {
 Router.prototype._proxy = cadence(function (async, request, response) {
     var distribution = this._distributor.distribute(request)
     async(function () {
-        if (this._clients[distribution.index] == null) {
-            var client = this._clients[distribution.index] = {
+        if (this._proxies[distribution.index] == null) {
+            var proxy = this._proxies[distribution.index] = {
                 destructible: new Destructible,
                 conduit: null,
                 client: null,
                 initialized: new Signal
             }
+            this._destructible.addDestructor([ 'proxy', distribution.index ], proxy.destructible, 'destroy')
             async(function () {
+                var headers = {
+                    'x-subordinate-is-middleware': this._distributor.secret,
+                }
+                distribution.setHeaders(function (name, value) {
+                    headers[name] = value
+                })
                 var connect = this._bind.connect({
                     secure: false,
-                    headers: {
-                        'x-subordinate-is-middleware': this._secret,
-                        'x-subordinate-index': distribution.index,
-                        'x-subordinate-from': request.headers['x-subordinate-index']
-                    }
+                    headers: headers
                 })
                 Downgrader.Socket.connect(connect, async())
             }, function (request, socket, head) {
                 var readable = new Staccato.Readable(socket)
                 async(function () {
+                    socket.write(new Buffer([ 0xaa, 0xaa, 0xaa, 0xaa ]), async())
+                }, function () {
                     readable.read(async())
                 }, function (buffer) {
-                    assert(buffer.toString('hex'), 'aaaaaaaa', 'failed to start middleware')
+                    interrupt.assert(buffer.toString('hex'), 'aaaaaaaa', 'failed to start middleware')
                     readable.destroy()
                     var conduit = new Conduit(socket, socket)
-                    client.conduit = conduit
-                    client.destructible.addDestructor('socket', socket.destroy.bind(socket))
-                    client.destructible.addDestructor('conduit', client.conduit.destroy.bind(client.conduit))
+                    proxy.conduit = conduit
+                    proxy.destructible.addDestructor('socket', socket, 'destroy')
+                    proxy.destructible.addDestructor('conduit', proxy.conduit, 'destroy')
                     // TODO Reconsider use of Destructible.
                     // TODO Socket on error calls destructible, you got it
                     // almost right in Rendezvous.
-                    client.destructor.destructible(function (ready, callback) {
-                        client.conduit.listen(callback)
+                    proxy.destructible.monitor([ 'listen' ], function (ready, callback) {
+                        proxy.conduit.listen(callback)
                         ready.unlatch()
-                    }, abend)
+                    }, this._destructible.monitor([ 'proxy', distribution.index ]))
 
-                    client.client = new Client('subordinate', conduit.read, conduit.write)
+                    proxy.client = new Conduit.Client('subordinate', conduit.read, conduit.write)
 
-                    client.initialized.unlatch()
+                    proxy.initialized.unlatch()
                 })
             })
-        } else if (this._clients[distribution.index].client == null) {
-            this._clients[distribution.index].initialized.wait(async())
         }
     }, function () {
-        var client = this._clients[distribution.index]
+        this._proxies[distribution.index].initialized.wait(async())
+    }, function () {
+        var proxy = this._proxies[distribution.index]
         var router = this
-        new Request(client.client, request, response, function (header) {
+        new Assignation.Request(proxy.client, request, response, function (header) {
             distribution.setHeaders(function (name, value) {
                 header.addHTTPHeader(name, value)
             })
@@ -123,18 +144,7 @@ Router.prototype._proxy = cadence(function (async, request, response) {
 })
 
 Router.prototype._request = function (request, response) {
-    this._proxy(request, response, function (error) {
-        if (typeof error == 'number') {
-            var message = new Buffer(http.STATUS_CODES[error])
-            response.writeHead(error, http.STATUS_CODES[error], {
-                'content-type': 'text/plain',
-                'contnet-length': String(message.length)
-            })
-            response.end(message)
-        } else {
-            abend(error)
-        }
-    })
+    this._proxy(request, response, errorify)
 }
 
 Router.prototype.run = cadence(function (async) {
@@ -146,7 +156,7 @@ Router.prototype.run = cadence(function (async) {
 
     this._destructible.addDestructor('http', server.destroy.bind(server))
     server.on('upgrade', Operation([ downgrader, 'upgrade' ]))
-    this._destructible.stack(async, 'server')(function (ready) {
+    this._destructible.monitor(async, 'server')(function (ready) {
         async(function () {
             this._bind.listen(server, async())
         }, function () {

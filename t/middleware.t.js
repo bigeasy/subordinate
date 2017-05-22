@@ -48,6 +48,13 @@ function prove (async, assert) {
 
     var tcp = require('net')
 
+    async([function () {
+        subordinate.listen(async())
+    }, function (error) {
+        console.log(error.stack)
+        throw error
+    }])
+
     async(function () {
         var socket
         server.tcp = tcp.createServer(function (socket) {
@@ -65,10 +72,14 @@ function prove (async, assert) {
             server.http.listen(8080, async())
         }, function () {
             socket = tcp.connect(8081, '127.0.0.1', async())
+            delta(async()).ee(socket).on('connect')
         }, function () {
+            console.log('- here')
+            socket.write(new Buffer([ 0xaa, 0xaa, 0xaa, 0xaa ]))
             async(function () {
                 delta(async()).ee(socket).on('readable')
             }, function () {
+                console.log('readable')
                 assert(socket.read().toString('hex'), 'aaaaaaaa', 'ready')
                 proxy.conduit = new Conduit(socket, socket)
                 proxy.client = new Client('subordinate', proxy.conduit.read, proxy.conduit.write)
