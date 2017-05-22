@@ -1,19 +1,18 @@
-module.exports = function (callback) {
+var http = require('http')
+
+module.exports = function (response, callback) {
     return function (error) {
         if (error == null) {
             return
         }
 
         if (typeof error == 'number') {
-            var message = new Buffer(http.STATUS_CODES[error])
+            var message = http.STATUS_CODES[error]
             if (message != null) {
-                response.writeHead(error, http.STATUS_CODES[error], {
-                    'content-type': 'text/plain',
-                    'contnet-length': String(message.length)
-                })
+                response.writeHead(error, message, { 'content-type': 'text/plain' })
                 response.end(message)
+                return
             }
-            return
         }
 
         callback(error)
