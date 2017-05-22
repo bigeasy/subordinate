@@ -35,7 +35,8 @@
                             "signal":                       "1.10.x",
                             "hash.fnv":                     "1.0.0",
                             "interlocutor":                 "0.2.x",
-                            "server-destroy":               "1.0.1"
+                            "server-destroy":               "1.0.1",
+                            "staccato":                     "3.0.x"
     },
     "devDependencies":
     {
