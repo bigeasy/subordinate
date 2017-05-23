@@ -2,9 +2,9 @@ require('proof')(1, require('cadence')(prove))
 
 function prove (async, assert) {
     var Master = require('../listener')
-    var master = new Master({ argv: [ 't/router.js' ] })
+    var master = new Master
     async(function () {
-        master.run({}, async())
+        master.run(1, [ 't/router.js' ], {}, async())
     }, function () {
         assert(true, 'done')
     })
