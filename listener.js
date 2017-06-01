@@ -91,7 +91,7 @@ Listener.prototype._kill = function () {
 Listener.prototype.run = cadence(function (async, count, argv, env) {
     argv = argv.slice()
     var command = argv.shift()
-    cluster.setupMaster({ exec: command, argv: argv })
+    cluster.setupMaster({ exec: command, args: argv })
     for (var i = 0, I = coalesce(count, 1); i < I; i++) {
         var listener = cluster.fork(env)
         this._routers.push(listener)
