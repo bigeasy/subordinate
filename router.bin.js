@@ -38,7 +38,34 @@
         index will not be commonly useful, but it is needed sometimes during
         development.
 
+    -w, --workers <number>
+    -i, --index <number>
     ___ . ___
 */
 require('arguable')(module, require('cadence')(function (async, program) {
+    program.validate(require('arguable/bindable'), 'bind')
+
+    var Signal = require('signal')
+    var coalesce = require('extant')
+
+    var ready = coalesce(program.ready, new Signal)
+
+    var Router = require('./router')
+    var Distributor = require('./distributor')
+
+    var distributor = new Distributor({
+        keys: program.grouped.key,
+        index: +program.ultimate.index,
+        workers: +program.ultimate.workers,
+        secret: program.ultimate.secret
+    })
+    var router = new Router({
+        distributor: distributor,
+        bind: program.ultimate.bind,
+        secret: program.ultimate.secret,
+        parent: program
+    })
+    program.on('shutdown', router.destroy.bind(router))
+    router.run(async())
+    router.ready.wait(ready, 'unlatch')
 }))

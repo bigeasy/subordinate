@@ -2,7 +2,12 @@ require('proof')(5, prove)
 
 function prove (assert) {
     var Distributor = require('../distributor')
-    var distrubutor = new Distributor(0, 'x', 3, [ '$.headers["x-object-id"]', './t/key' ])
+    var distrubutor = new Distributor({
+        index: 0,
+        secret: 'x',
+        workers: 3,
+        keys: [ '$.headers["x-object-id"]', './t/key' ]
+    })
     var distrubution = distrubutor.distribute({
         headers: {
             'x-object-id': '1'

@@ -29,11 +29,11 @@ Distribution.prototype.setHeaders = function (set) {
 // key material from HTTP headers
 
 //
-function Distributor (index, secret, workers, keys) {
-    this.index = index
-    this.secret = secret
-    this._workers = workers
-    this._keys = keys.map(function (key) {
+function Distributor (options) {
+    this.index = options.index
+    this.secret = options.secret
+    this._workers = options.workers
+    this._keys = options.keys.map(function (key) {
         if (~key.indexOf('$')) {
             return new Function('$', 'return ' + key)
         } else {

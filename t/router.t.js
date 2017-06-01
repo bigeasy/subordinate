@@ -4,7 +4,12 @@ function prove (async, assert) {
     var Router = require('../router')
     var Distributor = require('../distributor')
 
-    var distributor = new Distributor(0, 'x', 3, ['$.headers.value'])
+    var distributor = new Distributor({
+        index: 0,
+        secret: 'x',
+        workers: 3,
+        keys: ['$.headers.value']
+    })
 
     var delta = require('delta')
     var abend = require('abend')
