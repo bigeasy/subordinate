@@ -72,14 +72,8 @@ var Operation = require('operation/variadic')
 // it is generated internally.
 
 //
-function Listener (options) {
-    var argv = options.argv.slice()
-    this._router ={
-        command: argv.shift(),
-        argv: argv,
-        count: coalesce(options.routers, 1),
-        array: []
-    }
+function Listener () {
+    this._routers = []
     this._destructible = new Destructible('master')
     this._destructible.markDestroyed(this)
     this._destructible.addDestructor('kill', this, '_kill')
@@ -91,14 +85,16 @@ Listener.prototype.destroy = function () {
 
 // https://groups.google.com/forum/#!msg/comp.unix.wizards/GNU3ZFJiq74/ZFeCKhnavkMJ
 Listener.prototype._kill = function () {
-    this._router.array.forEach(function (listener) { listener.kill() })
+    this._routers.forEach(function (listener) { listener.kill() })
 }
 
-Listener.prototype.run = cadence(function (async, env) {
-    cluster.setupMaster({ exec: this._router.command, argv: this._router.argv })
-    for (var i = 0; i < this._router.count; i++) {
+Listener.prototype.run = cadence(function (async, count, argv, env) {
+    argv = argv.slice()
+    var command = argv.shift()
+    cluster.setupMaster({ exec: command, argv: argv })
+    for (var i = 0, I = coalesce(count, 1); i < I; i++) {
         var listener = cluster.fork(env)
-        this._router.array.push(listener)
+        this._routers.push(listener)
         async(function () {
             delta(async()).ee(listener).on('exit')
         }, function (code, signal) {
