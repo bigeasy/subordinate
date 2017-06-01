@@ -69,11 +69,10 @@ function Subordinate (options) {
 // Ah, `unwound` will get called if `destroy` is called.
 
 
-Subordinate.prototype._responder = cadence(function (async, ready, message, socket) {
+Subordinate.prototype._responder = cadence(function (async, message, socket) {
     var responder = this._responders[message.from] = new Responder(this._interlocutor)
     this._destructible.addDestructor([ 'responder', message.from ], responder, 'destroy')
     responder.listen(socket, async())
-    ready.unlatch()
 })
 
 Subordinate.prototype._message = function (message, socket) {
@@ -82,7 +81,7 @@ Subordinate.prototype._message = function (message, socket) {
     }
     if (message.method == 'middleware') {
         assert(this._responders[message.from] == null)
-        this._destructible.monitor([ 'responer', message.from ], this, '_responder', message, socket)
+        this._responder(message, socket, this._destructible.monitor([ 'responer', message.from ]))
     } else {
         var buffer = new Buffer(message.buffer, 'base64')
         this._connect.call(null, message.body, socket, buffer)
@@ -118,7 +117,7 @@ Subordinate.prototype.reassign = function () {
 }
 
 Subordinate.prototype.listen = cadence(function (async) {
-    this._destructible.completed(10, async())
+    this._destructible.completed(1000, async())
 })
 
 Subordinate.prototype.destroy = function () {

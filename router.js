@@ -119,10 +119,7 @@ Router.prototype._proxy = cadence(function (async, request, response) {
                     // TODO Reconsider use of Destructible.
                     // TODO Socket on error calls destructible, you got it
                     // almost right in Rendezvous.
-                    proxy.destructible.monitor([ 'listen' ], function (ready, callback) {
-                        proxy.conduit.listen(callback)
-                        ready.unlatch()
-                    }, this._destructible.monitor([ 'proxy', distribution.index ]))
+                    proxy.conduit.listen(this._destructible.monitor([ 'proxy', distribution.index ]))
 
                     proxy.client = new Conduit.Client('subordinate', conduit.read, conduit.write)
 
@@ -156,16 +153,16 @@ Router.prototype.run = cadence(function (async) {
 
     this._destructible.addDestructor('http', server.destroy.bind(server))
     server.on('upgrade', Operation([ downgrader, 'upgrade' ]))
-    this._destructible.monitor(async, 'server')(function (ready) {
+    cadence(function (async) {
         async(function () {
             this._bind.listen(server, async())
         }, function () {
             delta(async()).ee(server).on('close')
-            ready.unlatch()
+            this.ready.unlatch()
         })
-    })
+    }).call(this, this._destructible.monitor('server'))
 
-    this._destructible.ready.wait(this.ready, 'unlatch')
+    this._destructible.completed(async())
 })
 
 Router.prototype.destroy = function () {

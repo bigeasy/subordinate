@@ -18,6 +18,9 @@ var Assignation = { Response: require('assignation/response') }
 // Controlled demolition of objects.
 var Destructible = require('destructible')
 
+// Create a cancelable series of function invocations.
+var Thereafter = require('thereafter')
+
 function Responder (interlocutor) {
     this._interlocutor = interlocutor
     this._destructible = new Destructible('responder')
@@ -30,17 +33,21 @@ Responder.prototype.listen = cadence(function (async, socket) {
         readable.read(async())
     }, function (buffer) {
         interrupt.assert(buffer.toString('hex') == 'aaaaaaaa', 'invalid middleware handshake')
-        this._destructible.monitor(async, 'listen')(function (ready) {
+        var thereafter = new Thereafter
+        this._destructible.addDestructor('thereafter', thereafter, 'cancel')
+        thereafter.run(this, function (ready) {
             var conduit = new Conduit(socket, socket)
+            conduit.ready.wait(ready, 'unlatch')
             new Conduit.Server({ object: this, method: '_request' }, 'subordinate', conduit.read, conduit.write)
             this._destructible.addDestructor('conduit', conduit, 'destroy')
-            conduit.listen(async())
+            conduit.listen(this._destructible.monitor('listen'))
+        })
+        thereafter.run(this, function (ready) {
+            socket.write(new Buffer([ 0xaa, 0xaa, 0xaa, 0xaa ]), this._destructible.rescue('handshake'))
             ready.unlatch()
         })
-        this._destructible.rescue(async)(function () {
-            socket.write(new Buffer([ 0xaa, 0xaa, 0xaa, 0xaa ]), async())
-        })
-        this._destructible.ready.wait(this.ready, 'unlatch')
+        thereafter.ready.wait(this.ready, 'unlatch')
+        this._destructible.completed(async())
     })
 })
 
