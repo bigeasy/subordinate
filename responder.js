@@ -30,9 +30,11 @@ function Responder (interlocutor) {
 Responder.prototype.listen = cadence(function (async, socket) {
     var readable = new Staccato.Readable(socket)
     async(function () {
+    /*
         readable.read(async())
     }, function (buffer) {
         interrupt.assert(buffer.toString('hex') == 'aaaaaaaa', 'invalid middleware handshake')
+    */
         var thereafter = new Thereafter
         this._destructible.addDestructor('thereafter', thereafter, 'cancel')
         thereafter.run(this, function (ready) {

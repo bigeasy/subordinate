@@ -55,7 +55,7 @@ require('arguable')(module, require('cadence')(function (async, program) {
 
     var distributor = new Distributor({
         keys: program.grouped.key,
-        index: +program.ultimate.index,
+        index: +program.env.SUBORDINATE_LISTENER_INDEX,
         workers: +program.ultimate.workers,
         secret: program.ultimate.secret
     })

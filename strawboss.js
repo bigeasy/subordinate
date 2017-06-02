@@ -46,6 +46,10 @@ StrawBoss.prototype.send = function (message, handle) {
     })
 }
 
+StrawBoss.prototype.sendTo = function (index, message, handle) {
+    this._subordinate.array[index].send(message, coalesce(handle))
+}
+
 // TODO Starting workers as requested for pipelines would be done here now.
 StrawBoss.prototype.message = function (message, handle) {
     if (message.module == 'subordinate') {
@@ -65,6 +69,7 @@ StrawBoss.prototype.run = cadence(function (async) {
         async(function () {
             delta(async()).ee(subordinate).on('exit')
         }, function (code, signal) {
+            console.log(code, signal, this.destroyed)
             interrupt.assert(this.destroyed, 'subordinate.exit', { code: code, signal: signal })
             return []
         })

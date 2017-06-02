@@ -75,7 +75,7 @@ function prove (async, assert) {
             delta(async()).ee(socket).on('connect')
         }, function () {
             console.log('- here')
-            socket.write(new Buffer([ 0xaa, 0xaa, 0xaa, 0xaa ]))
+            // socket.write(new Buffer([ 0xaa, 0xaa, 0xaa, 0xaa ]))
             async(function () {
                 delta(async()).ee(socket).on('readable')
             }, function () {

@@ -1,5 +1,6 @@
 // Node.js API.
 var http = require('http')
+var stream = require('stream')
 
 // Control-flow libraries.
 var cadence = require('cadence')
@@ -27,7 +28,7 @@ var destroyer = require('server-destroy')
 var interrupt = require('interrupt').createInterrupter('subordinate')
 
 // Convert thrown integers into HTTP error codes.
-var errorify = require('./errorify')(abend)
+var errorify = require('./errorify')
 
 // Evented multiplexing of Node.js streams.
 var Conduit = require('conduit')
@@ -77,6 +78,8 @@ Router.prototype._socket = function (request, socket) {
             body: request
         }
     }
+    socket.pause()
+    console.log('socketted!', message)
     this._parent.send(message, socket)
 }
 
@@ -104,12 +107,14 @@ Router.prototype._proxy = cadence(function (async, request, response) {
                 })
                 Downgrader.Socket.connect(connect, async())
             }, function (request, socket, head) {
-                var readable = new Staccato.Readable(socket)
+                var through = new stream.PassThrough
+                var readable = new Staccato.Readable(through)
                 async(function () {
-                    socket.write(new Buffer([ 0xaa, 0xaa, 0xaa, 0xaa ]), async())
-                }, function () {
                     readable.read(async())
+                    through.write(head)
+                    socket.pipe(through)
                 }, function (buffer) {
+                    socket.unpipe(through)
                     interrupt.assert(buffer.toString('hex'), 'aaaaaaaa', 'failed to start middleware')
                     readable.destroy()
                     var conduit = new Conduit(socket, socket)
@@ -141,7 +146,7 @@ Router.prototype._proxy = cadence(function (async, request, response) {
 })
 
 Router.prototype._request = function (request, response) {
-    this._proxy(request, response, errorify)
+    this._proxy(request, response, errorify(response, abend))
 }
 
 Router.prototype.run = cadence(function (async) {
@@ -151,7 +156,10 @@ Router.prototype.run = cadence(function (async) {
     var server = http.createServer(Operation([ this, '_request' ]))
     destroyer(server)
 
-    this._destructible.addDestructor('http', server.destroy.bind(server))
+    this._destructible.addDestructor('http', server, 'destroy')
+    this._destructible.addDestructor('x', function () {
+        console.log('destroyed')
+    })
     server.on('upgrade', Operation([ downgrader, 'upgrade' ]))
     cadence(function (async) {
         async(function () {

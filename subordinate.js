@@ -32,12 +32,17 @@ var Responder = require('./responder')
 //
 function Subordinate (options) {
     this._responders = {}
-    this._process = coalesce(options.process, process)
     this._destructible = new Destructible
     this._interlocutor = new Interlocutor(options.middleware)
     this._connect = coalesce(options.connect)
     this._responders = {}
-    this._process.on('message', Operation({ object: this, method: '_message' }))
+    this._process = coalesce(options.process, process)
+
+    var ee = this._process, messages
+    ee.on('message', messages = Operation({ object: this, method: '_message' }))
+    this._destructible.addDestructor('messages', function () {
+        ee.removeListener('message', messages)
+    })
 }
 
 // TODO Wondering if `Destructible` shouldn't have some sort of event to
@@ -80,6 +85,7 @@ Subordinate.prototype._message = function (message, socket) {
         return
     }
     if (message.method == 'middleware') {
+        console.log(message)
         assert(this._responders[message.from] == null)
         this._responder(message, socket, this._destructible.monitor([ 'responer', message.from ]))
     } else {

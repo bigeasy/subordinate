@@ -32,6 +32,7 @@
         a path to a domain socket.
 
     -w, --workers <number>
+    -r, --routers <number>
 
     -s, --secret <string>
 
@@ -44,12 +45,13 @@
     ___ . ___
 */
 require('arguable')(module, require('cadence')(function (async, program) {
-    var coalesce = require('extant')
     var crypto = require('crypto')
-    var Cluster = require('./cluster')
-    if (!/^[\/.]/.test(program.ultimate.bind)) {
-        program.validate(require('arguable/bindable'), 'bind')
-    }
+
+    var Signal = require('signal')
+    var coalesce = require('extant')
+
+    var ready = coalesce(program.ready, new Signal)
+
     async(function () {
         var secret = coalesce(program.env.SUBORDINATE_SECRET, program.ultimate.secret)
         if (secret) {
@@ -61,8 +63,71 @@ require('arguable')(module, require('cadence')(function (async, program) {
             return [ buffer.toString('hex') ]
         })
     }, function (secret) {
-        var cluster = new Cluster(program, secret)
-        cluster.run(async())
-        program.on('shutdown', cluster.destroy.bind(cluster))
+        program.validate(require('arguable/bindable'), 'bind')
+
+        var Destructible = require('destructible')
+        var destructible = new Destructible('subordinate x')
+
+        program.on('shutdown', destructible.destroy.bind(destructible))
+
+        var StrawBoss = require('./strawboss')
+        var strawboss = new StrawBoss({
+            argv: program.argv.slice(),
+            program: program,
+            subordinates: +program.ultimate.workers
+        })
+
+        destructible.addDestructor('strawboss', strawboss, 'destroy')
+
+        var Thereafter = require('thereafter')
+        var thereafter = new Thereafter
+
+        var cluster = require('cluster')
+        var messages
+        cluster.on('message', messages = function (message, handle) {
+            strawboss.sendTo(message.to, message, handle)
+        })
+        destructible.addDestructor('message', function () {
+            program.removeListener('message', messages)
+        })
+
+        var Listener = require('./listener')
+        var listener = new Listener
+
+        destructible.addDestructor('listener', listener, 'destroy')
+
+        thereafter.run(function (ready) {
+            strawboss.run(destructible.monitor('strawboss'))
+            ready.unlatch()
+        })
+
+        var path = require('path')
+
+        thereafter.run(function (ready) {
+            var argv = [
+                path.join(__dirname, 'router.bin.js'),
+                '--workers', program.ultimate.workers,
+                '--secret', secret,
+                '--bind', String(program.ultimate.bind),
+                '--workers', program.ultimate.workers
+            ]
+            program.grouped.key.forEach(function (key) {
+                argv.push('--key', key)
+            })
+            listener.run(+program.ultimate.routers, argv, function (index) {
+                var env = JSON.parse(JSON.stringify(program.env))
+                env.SUBORDINATE_LISTENER_INDEX = index
+                return env
+            }, async())
+            ready.unlatch()
+        })
+
+        thereafter.ready.wait(ready, 'unlatch')
+
+        destructible.addDestructor('done', function () { console.log('done') })
+
+        destructible.completed(1000, async())
+    }, function () {
+        console.log('xxxxxx')
     })
 }))

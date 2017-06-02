@@ -76,6 +76,7 @@ function Listener () {
     this._routers = []
     this._destructible = new Destructible('master')
     this._destructible.markDestroyed(this)
+    this._destructible.addDestructor('desconnect', cluster, 'disconnect')
     this._destructible.addDestructor('kill', this, '_kill')
 }
 
@@ -88,12 +89,12 @@ Listener.prototype._kill = function () {
     this._routers.forEach(function (listener) { listener.kill() })
 }
 
-Listener.prototype.run = cadence(function (async, count, argv, env) {
+Listener.prototype.run = cadence(function (async, count, argv, environment) {
     argv = argv.slice()
     var command = argv.shift()
     cluster.setupMaster({ exec: command, args: argv })
     for (var i = 0, I = coalesce(count, 1); i < I; i++) {
-        var listener = cluster.fork(env)
+        var listener = cluster.fork(environment(i))
         this._routers.push(listener)
         async(function () {
             delta(async()).ee(listener).on('exit')

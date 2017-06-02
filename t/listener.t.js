@@ -4,7 +4,7 @@ function prove (async, assert) {
     var Master = require('../listener')
     var master = new Master
     async(function () {
-        master.run(1, [ 't/router.js' ], {}, async())
+        master.run(1, [ 't/router.js' ], function () { return {} }, async())
     }, function () {
         assert(true, 'done')
     })
