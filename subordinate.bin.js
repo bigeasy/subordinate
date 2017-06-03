@@ -73,7 +73,7 @@ require('arguable')(module, require('cadence')(function (async, program) {
         var StrawBoss = require('./strawboss')
         var strawboss = new StrawBoss({
             argv: program.argv.slice(),
-            program: program,
+            process: program,
             subordinates: +program.ultimate.workers
         })
 
