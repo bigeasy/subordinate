@@ -50,6 +50,8 @@ require('arguable')(module, require('cadence')(function (async, program) {
     var Signal = require('signal')
     var coalesce = require('extant')
 
+    var fixup = require('./fixup')
+
     var ready = coalesce(program.ready, new Signal)
 
     async(function () {
@@ -84,9 +86,10 @@ require('arguable')(module, require('cadence')(function (async, program) {
 
         var cluster = require('cluster')
         var messages
-        cluster.on('message', messages = function (message, handle) {
+        cluster.on('message', messages = fixup(function (message, handle) {
+            console.log(message)
             strawboss.sendTo(message.to, message, handle)
-        })
+        }))
         destructible.addDestructor('message', function () {
             program.removeListener('message', messages)
         })

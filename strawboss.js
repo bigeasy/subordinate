@@ -48,7 +48,7 @@ StrawBoss.prototype.send = function (message, handle) {
 }
 
 StrawBoss.prototype.sendTo = function (index, message, handle) {
-    console.log('--> sending?')
+    console.log('--> sending?', index)
     this._subordinate.array[index].send(message, coalesce(handle))
 }
 
