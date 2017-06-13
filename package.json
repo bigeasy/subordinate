@@ -41,7 +41,8 @@
     },
     "devDependencies":
     {
-                            "proof":                        "3.0.x"
+                            "proof":                        "3.0.x",
+                            "vizsla":                       "4.0.x"
     },
     "main":                 "subordinate",
     "bin":
