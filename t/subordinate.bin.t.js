@@ -14,7 +14,7 @@ function prove (async, assert) {
         }], function () {
             io.ready.wait(async())
         }, function () {
-            setTimeout(async(), 250)
+            setTimeout(async(), 1000)
         }, function () {
             ua.fetch({ url: 'http://127.0.0.1:8888' }, async())
         }, function (result) {
