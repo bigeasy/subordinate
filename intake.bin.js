@@ -3,6 +3,7 @@
 //
 require('arguable')(module, require('cadence')(function (async, program) {
     var url = require('url')
+    var abend = require('abend')
     var Subordinate = require('./subordinate')
     var subordinate = new Subordinate({
         middleware: function (request, response, next) {
@@ -28,5 +29,6 @@ require('arguable')(module, require('cadence')(function (async, program) {
             }
         }
     })
-    subordinate.listen(program)
+    subordinate.listen(abend)
+    program.on('shutdown', subordinate.destroy.bind(subordinate))
 }))

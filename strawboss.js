@@ -41,12 +41,14 @@ StrawBoss.prototype.destroy = function () {
 }
 
 StrawBoss.prototype.send = function (message, handle) {
+    console.log('--> sending?')
     this._subordinate.array.forEach(function (subordinate) {
         subordinate.send(message, coalesce(handle))
     })
 }
 
 StrawBoss.prototype.sendTo = function (index, message, handle) {
+    console.log('--> sending?')
     this._subordinate.array[index].send(message, coalesce(handle))
 }
 

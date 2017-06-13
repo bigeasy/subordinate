@@ -125,7 +125,7 @@ function prove (async, assert) {
                 assert(buffer.toString(), 'hello')
             })
         }, function () {
-            router.destroy()
+            router.message({ module: 'subordinate', method: 'shutdown' })
         })
     }, function (error) {
         console.log(error)

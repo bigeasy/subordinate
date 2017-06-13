@@ -21,9 +21,6 @@ Downgrader.Socket = require('downgrader/socket')
 // Controlled demolition of objects.
 var Destructible = require('destructible')
 
-// Closes all open sockets so that the HTTP server close.
-var destroyer = require('server-destroy')
-
 // Exceptions that you can catch by type.
 var interrupt = require('interrupt').createInterrupter('subordinate')
 
@@ -42,11 +39,17 @@ function Router (options) {
     this._proxies = {}
     this._bind = options.bind
     this._parent = options.parent
+    var s = options.parent.send
+    this._parent.send = function () {
+        console.log('SENDING')
+        s.apply(options.parent, Array.prototype.slice.call(arguments))
+    }
     this._distributor = options.distributor
     this.ready = new Signal
 }
 
 Router.prototype._socket = function (request, socket) {
+    console.log('UPGRADE', socket.remoteAddress + ':' + socket.remotePort)
     var message
     var middleware = request.headers['x-subordinate-is-middleware'] == this._distributor.secret
     if (middleware) {
@@ -119,6 +122,9 @@ Router.prototype._proxy = cadence(function (async, request, response) {
                     readable.destroy()
                     var conduit = new Conduit(socket, socket)
                     proxy.conduit = conduit
+                    proxy.destructible.addDestructor('closeify', function () {
+                        console.log('DESTROYED ->', socket.localAddress + ':' + socket.localPort)
+                    })
                     proxy.destructible.addDestructor('socket', socket, 'destroy')
                     proxy.destructible.addDestructor('conduit', proxy.conduit, 'destroy')
                     // TODO Reconsider use of Destructible.
@@ -145,36 +151,53 @@ Router.prototype._proxy = cadence(function (async, request, response) {
     })
 })
 
+Router.prototype.message = function (message) {
+    if (message.module == 'subordinate' && message.method == 'shutdown') {
+        this._destructible.destroy()
+    }
+}
+
 Router.prototype._request = function (request, response) {
     this._proxy(request, response, errorify(response, abend))
 }
 
 Router.prototype.run = cadence(function (async) {
+    var connections = {}
     var downgrader = new Downgrader
     downgrader.on('socket', Operation([ this, '_socket' ]))
 
     var server = http.createServer(Operation([ this, '_request' ]))
-    destroyer(server)
 
-    this._destructible.addDestructor('http', server, 'destroy')
-    this._destructible.addDestructor('x', function () {
-        console.log('destroyed')
-    })
+    this._destructible.addDestructor('disconnect', require('./disconnector')(require('cluster').worker, server))
+
     server.on('upgrade', Operation([ downgrader, 'upgrade' ]))
+
+    // TODO Account for relocated connections.
+    server.on('connection', function (socket) {
+        var key = socket.remoteAddress + ':' + socket.remotePort
+        connections[key] = socket
+        socket.on('close', function () {
+            delete connections[key]
+        })
+    })
+    this._destructible.addDestructor('http', function () {
+        for (var key in connections) {
+            connections[key].destroy()
+        }
+    })
+
     cadence(function (async) {
         async(function () {
             this._bind.listen(server, async())
         }, function () {
             delta(async()).ee(server).on('close')
             this.ready.unlatch()
+        }, function () {
+            console.log('CLOSEIFY')
         })
     }).call(this, this._destructible.monitor('server'))
 
-    this._destructible.completed(async())
+    this._destructible.completed(5000, async())
 })
-
-Router.prototype.destroy = function () {
-    this._destructible.destroy()
-}
 
 module.exports = Router

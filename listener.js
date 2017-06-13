@@ -73,11 +73,12 @@ var Operation = require('operation/variadic')
 
 //
 function Listener () {
-    this._routers = []
     this._destructible = new Destructible('master')
     this._destructible.markDestroyed(this)
-    this._destructible.addDestructor('desconnect', cluster, 'disconnect')
-    this._destructible.addDestructor('kill', this, '_kill')
+    this._destructible.addDestructor('shutdown', this, '_shutdown')
+    cluster.on('disconnect', function  (worker) {
+        console.log(worker.id)
+    })
 }
 
 Listener.prototype.destroy = function () {
@@ -85,20 +86,21 @@ Listener.prototype.destroy = function () {
 }
 
 // https://groups.google.com/forum/#!msg/comp.unix.wizards/GNU3ZFJiq74/ZFeCKhnavkMJ
-Listener.prototype._kill = function () {
-    this._routers.forEach(function (listener) { listener.kill() })
+Listener.prototype._shutdown = function () {
+    for (var id in cluster.workers) {
+        cluster.workers[id].send({ module: 'subordinate', method: 'shutdown' })
+//        cluster.workers[id].disconnect()
+    }
 }
 
 Listener.prototype.run = cadence(function (async, count, argv, environment) {
     argv = argv.slice()
-    var command = argv.shift()
-    cluster.setupMaster({ exec: command, args: argv })
+    cluster.setupMaster({ exec: argv.shift(), args: argv })
     for (var i = 0, I = coalesce(count, 1); i < I; i++) {
-        var listener = cluster.fork(environment(i))
-        this._routers.push(listener)
         async(function () {
-            delta(async()).ee(listener).on('exit')
+            delta(async()).ee(cluster.fork(environment(i))).on('exit')
         }, function (code, signal) {
+            console.log('ROUTER -->', code, signal)
             interrupt.assert(this.destroyed, 'listener error exit', { code: code, signal: signal })
             return []
         })

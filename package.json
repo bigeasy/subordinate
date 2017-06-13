@@ -22,7 +22,7 @@
     "dependencies":
     {
                             "abend":                        "1.0.x",
-                            "arguable":                     "5.0.x",
+                            "arguable":                     "5.1.x",
                             "assignation":                  "0.2.x",
                             "cadence":                      "1.0.x",
                             "conduit":                      "0.7.x",

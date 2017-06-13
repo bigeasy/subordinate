@@ -65,7 +65,11 @@ require('arguable')(module, require('cadence')(function (async, program) {
         secret: program.ultimate.secret,
         parent: program
     })
-    program.on('shutdown', router.destroy.bind(router))
-    router.run(async())
+    program.on('message', router.message.bind(router))
+    async(function () {
+        router.run(async())
+    }, function () {
+        console.log('closed')
+    })
     router.ready.wait(ready, 'unlatch')
 }))

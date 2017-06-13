@@ -67,19 +67,16 @@ function prove (async, assert) {
             }, socket)
         })
         async(function () {
-            server.tcp.listen(8081, async())
+            server.tcp.listen(8081, '127.0.0.1', async())
         }, function () {
-            server.http.listen(8080, async())
+            server.http.listen(8080, '127.0.0.1', async())
         }, function () {
-            socket = tcp.connect(8081, '127.0.0.1', async())
+            socket = tcp.connect(8081, '127.0.0.1')
             delta(async()).ee(socket).on('connect')
         }, function () {
-            console.log('- here')
-            // socket.write(new Buffer([ 0xaa, 0xaa, 0xaa, 0xaa ]))
             async(function () {
                 delta(async()).ee(socket).on('readable')
             }, function () {
-                console.log('readable')
                 assert(socket.read().toString('hex'), 'aaaaaaaa', 'ready')
                 proxy.conduit = new Conduit(socket, socket)
                 proxy.client = new Client('subordinate', proxy.conduit.read, proxy.conduit.write)
@@ -87,15 +84,24 @@ function prove (async, assert) {
                     proxy.conduit.listen(async())
                 })
                 async(function () {
-                    var request = http.get({ port: 8080 })
+                    var request = http.get({ host: '127.0.0.1', port: 8080 })
                     delta(async()).ee(request).on('response')
                 }, function (response) {
                     assert(response.statusCode, 200, 'got')
                     async(function () {
+                        delta(async()).ee(server.tcp).on('close')
+                    }, function () {
+                        console.log('tcp closed')
+                    })
+                    async(function () {
+                        delta(async()).ee(server.http).on('close')
+                    }, function () {
+                        console.log('http closed')
+                    })
+                    async(function () {
                         proxy.conduit.destroy()
                         server.tcp.close()
                         server.http.destroy()
-                        Error.stackTraceLimit = Infinity
                         subordinate.destroy()
                         socket.destroy()
                     })

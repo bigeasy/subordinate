@@ -49,7 +49,12 @@ Responder.prototype.listen = cadence(function (async, socket) {
             ready.unlatch()
         })
         thereafter.ready.wait(this.ready, 'unlatch')
-        this._destructible.completed(async())
+        async(function () {
+            this._destructible.completed(async())
+        }, function () {
+            console.log('completed')
+            return []
+        })
     })
 })
 
