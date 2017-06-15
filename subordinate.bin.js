@@ -87,7 +87,6 @@ require('arguable')(module, require('cadence')(function (async, program) {
         var cluster = require('cluster')
         var messages
         cluster.on('message', messages = fixup(function (message, handle) {
-            console.log(message)
             strawboss.sendTo(message.to, message, handle)
         }))
         destructible.addDestructor('message', function () {
@@ -127,10 +126,6 @@ require('arguable')(module, require('cadence')(function (async, program) {
 
         thereafter.ready.wait(ready, 'unlatch')
 
-        destructible.addDestructor('done', function () { console.log('done') })
-
         destructible.completed(1000, async())
-    }, function () {
-        console.log('xxxxxx')
     })
 }))

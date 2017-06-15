@@ -76,9 +76,6 @@ function Listener () {
     this._destructible = new Destructible('master')
     this._destructible.markDestroyed(this)
     this._destructible.addDestructor('shutdown', this, '_shutdown')
-    cluster.on('disconnect', function  (worker) {
-        console.log(worker.id)
-    })
 }
 
 Listener.prototype.destroy = function () {
@@ -100,7 +97,6 @@ Listener.prototype.run = cadence(function (async, count, argv, environment) {
         async(function () {
             delta(async()).ee(cluster.fork(environment(i))).on('exit')
         }, function (code, signal) {
-            console.log('ROUTER -->', code, signal)
             interrupt.assert(this.destroyed, 'listener error exit', { code: code, signal: signal })
             return []
         })

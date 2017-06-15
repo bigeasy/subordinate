@@ -41,7 +41,6 @@ function Subordinate (options) {
     var ee = this._process, messages
     ee.on('message', messages = Operation({ object: this, method: '_message' }))
     this._destructible.addDestructor('messages', function () {
-        console.log('---> removeListener')
         ee.removeListener('message', messages)
     })
 }
@@ -85,10 +84,8 @@ Subordinate.prototype._message = function (message, socket) {
     if (message.module != 'subordinate') {
         return
     }
-    console.log('MESSSAGE')
     this._destructible.addDestructor([ 'socket', socket.remoteAddress + ':' + socket.remotePort ], socket, 'destroy')
     if (message.method == 'middleware') {
-        console.log(message)
         assert(this._responders[message.from] == null)
         this._responder(message, socket, this._destructible.monitor([ 'responer', message.from ]))
     } else {

@@ -66,10 +66,6 @@ require('arguable')(module, require('cadence')(function (async, program) {
         parent: program
     })
     program.on('message', router.message.bind(router))
-    async(function () {
-        router.run(async())
-    }, function () {
-        console.log('closed')
-    })
+    router.run(async())
     router.ready.wait(ready, 'unlatch')
 }))

@@ -39,17 +39,11 @@ function Router (options) {
     this._proxies = {}
     this._bind = options.bind
     this._parent = options.parent
-    var s = options.parent.send
-    this._parent.send = function () {
-        console.log('SENDING')
-        s.apply(options.parent, Array.prototype.slice.call(arguments))
-    }
     this._distributor = options.distributor
     this.ready = new Signal
 }
 
 Router.prototype._socket = function (request, socket) {
-    console.log('UPGRADE', socket.remoteAddress + ':' + socket.remotePort)
     var message
     var middleware = request.headers['x-subordinate-is-middleware'] == this._distributor.secret
     if (middleware) {
@@ -81,8 +75,8 @@ Router.prototype._socket = function (request, socket) {
             body: request
         }
     }
+    // TODO Why pause?
     socket.pause()
-    console.log('socketted!', message)
     this._parent.send(message, socket)
 }
 
