@@ -31,7 +31,7 @@
                             "downgrader":                   "0.0.x",
                             "extant":                       "1.0.x",
                             "interrupt":                    "5.0.x",
-                            "operation":                    "1.4.x",
+                            "operation":                    "1.6.x",
                             "signal":                       "1.10.x",
                             "hash.fnv":                     "1.0.0",
                             "interlocutor":                 "0.2.x",
