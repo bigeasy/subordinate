@@ -115,7 +115,8 @@ Router.prototype._proxy = cadence(function (async, request, response) {
                     socket.unpipe(through)
                     interrupt.assert(buffer.toString('hex'), 'aaaaaaaa', 'failed to start middleware')
                     readable.destroy()
-                    var conduit = new Conduit(socket, socket)
+                    proxy.client = new Conduit.Client
+                    var conduit = new Conduit(socket, socket, proxy.client)
                     proxy.conduit = conduit
                     proxy.destructible.addDestructor('closeify', function () {
                         console.log('DESTROYED ->', socket.localAddress + ':' + socket.localPort)
@@ -125,9 +126,7 @@ Router.prototype._proxy = cadence(function (async, request, response) {
                     // TODO Reconsider use of Destructible.
                     // TODO Socket on error calls destructible, you got it
                     // almost right in Rendezvous.
-                    proxy.conduit.listen(this._destructible.monitor([ 'proxy', distribution.index ]))
-
-                    proxy.client = new Conduit.Client('subordinate', conduit.read, conduit.write)
+                    proxy.conduit.listen(null, this._destructible.monitor([ 'proxy', distribution.index ]))
 
                     proxy.initialized.unlatch()
                 })

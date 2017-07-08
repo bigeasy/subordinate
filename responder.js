@@ -22,6 +22,7 @@ var Destructible = require('destructible')
 var Thereafter = require('thereafter')
 
 function Responder (interlocutor) {
+    this._responder = 0
     this._interlocutor = interlocutor
     this._destructible = new Destructible('responder')
     this.ready = new Signal
@@ -38,11 +39,10 @@ Responder.prototype.listen = cadence(function (async, socket) {
         var thereafter = new Thereafter
         this._destructible.addDestructor('thereafter', thereafter, 'cancel')
         thereafter.run(this, function (ready) {
-            var conduit = new Conduit(socket, socket)
+            var conduit = new Conduit(socket, socket, new Conduit.Server(this, '_request'))
             conduit.ready.wait(ready, 'unlatch')
-            new Conduit.Server({ object: this, method: '_request' }, 'subordinate', conduit.read, conduit.write)
             this._destructible.addDestructor('conduit', conduit, 'destroy')
-            conduit.listen(this._destructible.monitor('listen'))
+            conduit.listen(null, this._destructible.monitor('listen'))
         })
         thereafter.run(this, function (ready) {
             socket.write(new Buffer([ 0xaa, 0xaa, 0xaa, 0xaa ]), this._destructible.rescue('handshake'))
@@ -54,7 +54,9 @@ Responder.prototype.listen = cadence(function (async, socket) {
 })
 
 Responder.prototype._request = function (socket, envelope) {
-    new Assignation.Response(this._interlocutor, socket, envelope).respond(this._destructible.rescue('request'))
+    var response = new Assignation.Response(this._interlocutor, socket, envelope)
+    response.listen(this._destructible.rescue([ 'reponder', this._responder++ ]))
+    return response
 }
 
 Responder.prototype.destroy = function () {

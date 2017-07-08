@@ -78,10 +78,10 @@ function prove (async, assert) {
                 delta(async()).ee(socket).on('readable')
             }, function () {
                 assert(socket.read().toString('hex'), 'aaaaaaaa', 'ready')
-                proxy.conduit = new Conduit(socket, socket)
-                proxy.client = new Client('subordinate', proxy.conduit.read, proxy.conduit.write)
+                proxy.client = new Client
+                proxy.conduit = new Conduit(socket, socket, proxy.client)
                 async(function () {
-                    proxy.conduit.listen(async())
+                    proxy.conduit.listen(null, async())
                 })
                 async(function () {
                     var request = http.get({ host: '127.0.0.1', port: 8080 })
