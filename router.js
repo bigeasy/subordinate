@@ -16,7 +16,6 @@ var Operation = require('operation/variadic')
 
 // Convert an HTTP request into a raw socket.
 var Downgrader = require('downgrader')
-Downgrader.Socket = require('downgrader/socket')
 
 // Controlled demolition of objects.
 var Destructible = require('destructible')
@@ -100,9 +99,11 @@ Router.prototype._proxy = cadence(function (async, request, response) {
                 })
                 var connect = this._bind.connect({
                     secure: false,
-                    headers: headers
+                    headers: Downgrader.headers(headers)
                 })
-                Downgrader.Socket.connect(connect, async())
+                var request = http.request(connect)
+                delta(async()).ee(request).on('upgrade')
+                request.end()
             }, function (request, socket, head) {
                 var through = new stream.PassThrough
                 var readable = new Staccato.Readable(through)

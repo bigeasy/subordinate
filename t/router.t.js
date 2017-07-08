@@ -14,7 +14,7 @@ function prove (async, assert) {
     var delta = require('delta')
     var abend = require('abend')
     var http = require('http')
-    var Socket = require('downgrader/socket')
+    var Downgrader = require('downgrader')
     var Responder = require('../responder')
     var Interlocutor = require('interlocutor')
 
@@ -37,9 +37,9 @@ function prove (async, assert) {
                 headers: {
                     value: 'x',
                     connection: 'Upgrade',
-                    upgrade: 'Conduit',
-                    'sec-conduit-protocol-id': 'c2845f0d55220303d62fc68e4c145877',
-                    'sec-conduit-version': '1',
+                    upgrade: 'Downgrader',
+                    'sec-downgrader-protocol-id': 'c2845f0d55220303d62fc68e4c145877',
+                    'sec-downgrader-version': '1',
                     host: '127.0.0.1:8080',
                     'x-subordinate-index': '2',
                     'x-subordinate-key': '["x"]',
@@ -91,12 +91,14 @@ function prove (async, assert) {
         async(function () {
             router.ready.wait(async())
         }, function () {
-            Socket.connect({
+            var request = http.request({
                 secure: false,
                 host: '127.0.0.1',
                 port: 8080,
-                headers: { value: 'x' }
-            }, async())
+                headers: Downgrader.headers({ value: 'x' })
+            })
+            delta(async()).ee(request).on('upgrade')
+            request.end()
         }, function (socket) {
             socket.destroy()
             var request = http.get({
