@@ -34,7 +34,7 @@
                             "operation":                    "1.6.x",
                             "signal":                       "1.10.x",
                             "hash.fnv":                     "1.0.0",
-                            "interlocutor":                 "0.2.x",
+                            "interlocutor":                 "0.3.x",
                             "server-destroy":               "1.0.1",
                             "staccato":                     "3.8.x",
                             "thereafter":                   "0.1.x"
