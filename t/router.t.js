@@ -79,6 +79,7 @@ function prove (async, assert) {
             }
         }
     })
+    router.message({})
 
     async([function () {
         router.run(async())
