@@ -53,12 +53,18 @@ function prove (assert) {
     } catch (error) {
         assert(error, 400, 'index out of range')
     }
-    assert(distrubutor.distribute({
+    var distribution = distrubutor.distribute({
         headers: {
             'x-subordinate-index': '2',
             'x-subordinate-secret': 'x'
         }
-    }), {
-        key: null, hash: null, index: 2
-    }, 'index')
+    })
+    var headers = {}
+    distribution.setHeaders(function (name, value) { headers[name] = value })
+    assert(headers, {
+        'x-subordinate-index': '2',
+        'x-subordinate-from': '0',
+        'x-subordinate-workers': '3',
+        'x-subordinate-secret': 'x'
+    }, 'specific index')
 }

@@ -15,8 +15,12 @@ function Distribution (distributor, key, hash, index) {
 }
 
 Distribution.prototype.setHeaders = function (set) {
-    set('x-subordinate-key', String(this.key))
-    set('x-subordinate-hash', String(this.hash))
+    if (this.key != null) {
+        set('x-subordinate-key', String(this.key))
+    }
+    if (this.hash != null) {
+        set('x-subordinate-hash', String(this.hash))
+    }
     set('x-subordinate-index', String(this.index))
     set('x-subordinate-from', String(this._distributor.index))
     set('x-subordinate-workers', String(this._distributor._workers))
@@ -68,11 +72,7 @@ Distributor.prototype.distribute = function (request) {
         if (index >= this._workers) {
             throw 400
         }
-        return {
-            key: null,
-            hash: null,
-            index: +request.headers['x-subordinate-index']
-        }
+        return new Distribution(this, null, null, +request.headers['x-subordinate-index'])
     }
 
     var key = JSON.stringify(this._keys.map(function (f) {
