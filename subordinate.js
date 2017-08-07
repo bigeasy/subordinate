@@ -110,6 +110,7 @@ Subordinate.prototype.reassign = function () {
     this._process.send({
         module: 'subordinate',
         method: 'socket',
+        // TODO Won't work because `index` is not `to`.
         index: index,
         buffer: buffer.toString('base64'),
         body: {

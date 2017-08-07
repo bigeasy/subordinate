@@ -69,7 +69,9 @@ Router.prototype._socket = function (request, socket) {
         message = {
             module: 'subordinate',
             method: 'socket',
+            // TODO Why `index`?
             index: +request.headers['x-subordinate-index'],
+            to: +request.headers['x-subordinate-index'],
             buffer: '',
             body: request
         }

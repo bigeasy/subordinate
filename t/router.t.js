@@ -29,6 +29,7 @@ function prove (async, assert) {
             module: 'subordinate',
             method: 'socket',
             index: 2,
+            to: 2,
             buffer: '',
             body: {
                 httpVersion: '1.1',
