@@ -21,28 +21,10 @@
     },
     "dependencies":
     {
-                            "abend":                        "1.0.x",
-                            "arguable":                     "5.2.x",
-                            "assignation":                  "0.10.x",
-                            "cadence":                      "1.0.x",
-                            "conduit":                      "0.13.x",
-                            "delta":                        "1.2.x",
-                            "destructible":                 "0.13.x",
-                            "downgrader":                   "0.1.x",
-                            "extant":                       "1.0.x",
-                            "interrupt":                    "5.0.x",
-                            "operation":                    "1.6.x",
-                            "signal":                       "1.10.x",
-                            "hash.fnv":                     "1.0.0",
-                            "interlocutor":                 "0.3.x",
-                            "server-destroy":               "1.0.1",
-                            "staccato":                     "3.8.x",
-                            "thereafter":                   "0.1.x"
     },
     "devDependencies":
     {
-                            "proof":                        "3.0.x",
-                            "vizsla":                       "5.2.x"
+                            "proof":                        "^9.0.2"
     },
     "main":                 "subordinate",
     "bin":
@@ -51,6 +33,6 @@
     },
     "scripts":
     {
-                            "test": "proof platform win32 && proof test */*.t.js || t/test"
+                            "test": "proof */*.t.js"
     }
 }
