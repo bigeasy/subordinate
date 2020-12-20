@@ -27,10 +27,6 @@
                             "proof":                        "^9.0.2"
     },
     "main":                 "subordinate",
-    "bin":
-    {
-                            "subordinate":                  "subordinate.bin.js"
-    },
     "scripts":
     {
                             "test": "proof */*.t.js"
