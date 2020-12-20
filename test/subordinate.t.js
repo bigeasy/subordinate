@@ -1,3 +1,5 @@
+'use strict'
+
 require('proof')(16, okay => {
     const subordinate = require('..')
 
